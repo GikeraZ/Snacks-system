@@ -1,0 +1,8 @@
+{
+  "name": "@prince-snack-center/roots",
+  "private": true,
+  "dependencies": {
+    "@prisma/client": "*",
+    "prince-snack-center": "*"
+  }
+}

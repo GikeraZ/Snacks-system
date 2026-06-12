@@ -63,29 +63,35 @@ export default function ProductsPage({ categories, initialProducts, role }: Prod
     setError('')
   }
 
-  const compressImage = (file: File, maxW = 800): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const img = new Image()
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        let { width, height } = img
-        if (width > maxW) { height *= maxW / width; width = maxW }
-        canvas.width = width; canvas.height = height
-        const ctx = canvas.getContext('2d')!
-        ctx.drawImage(img, 0, 0, width, height)
-        resolve(canvas.toDataURL('image/jpeg', 0.8))
-      }
-      img.onerror = reject
-      img.src = URL.createObjectURL(file)
-    })
-
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     setUploading(true)
     try {
-      const imageData = await compressImage(file)
+      const raw = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader()
+        r.onload = () => resolve(r.result as string)
+        r.onerror = () => reject(new Error('Failed to read file'))
+        r.readAsDataURL(file)
+      })
+
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const i = new Image()
+        i.onload = () => resolve(i)
+        i.onerror = () => reject(new Error('Failed to decode image'))
+        i.src = raw
+      })
+
+      const canvas = document.createElement('canvas')
+      const maxW = 800
+      let { width, height } = img
+      if (width > maxW) { height *= maxW / width; width = maxW }
+      canvas.width = width; canvas.height = height
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0, width, height)
+      const imageData = canvas.toDataURL('image/jpeg', 0.8)
+
       setImagePreview(imageData)
       const res = await fetch('/api/upload', {
         method: 'POST',
@@ -94,8 +100,10 @@ export default function ProductsPage({ categories, initialProducts, role }: Prod
       })
       const data = await res.json()
       if (res.ok) setForm(prev => ({ ...prev, imageUrl: data.url }))
-      else setError('Upload failed')
-    } catch { setError('Upload failed') }
+      else setError(data.error || 'Upload failed')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Upload failed')
+    }
     setUploading(false)
   }
 

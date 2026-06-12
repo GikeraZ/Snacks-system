@@ -12,10 +12,14 @@ function FaviconLoader() {
     fetch('/api/admin/settings')
       .then(res => res.json())
       .then(data => {
-        const faviconUrl = data?.receipt?.faviconUrl
-        if (faviconUrl) {
+        const r = data?.receipt
+        if (r?.faviconUrl) {
           const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
-          if (link) link.href = faviconUrl
+          if (link) link.href = r.faviconUrl.startsWith('data:') ? r.faviconUrl : `/api/logo/favicon`
+        }
+        if (r?.logoUrl) {
+          const apple = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]')
+          if (apple) apple.href = `/api/logo/logo`
         }
       })
       .catch(() => {})

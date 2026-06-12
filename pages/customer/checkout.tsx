@@ -4,7 +4,10 @@ import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
-import { ShoppingCart, MapPin, CreditCard, ChevronLeft, CheckCircle, Loader2, Phone, Building2, Clock, Receipt, ArrowLeft } from 'lucide-react'
+import {
+  ShoppingCart, MapPin, CreditCard, ChevronLeft, CheckCircle,
+  Loader2, Phone, Building2, Clock, Receipt, ArrowLeft, Smartphone, Copy
+} from 'lucide-react'
 import NotificationBell from '../../components/ui/NotificationBell'
 
 interface CartItem {
@@ -20,6 +23,16 @@ interface Product {
   name: string
   sellingPrice: number
   imageUrl?: string
+}
+
+interface ReceiptData {
+  businessName: string
+  orderNumber: string
+  transactionCode: string
+  amount: number
+  phoneNumber: string
+  items: { name: string; quantity: number; price: number; total: number }[]
+  date: string
 }
 
 const locations = [
@@ -39,10 +52,14 @@ export default function Checkout() {
   const [deliveryNotes, setDeliveryNotes] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('CASH')
   const [phone, setPhone] = useState('')
+  const [mpesaPhone, setMpesaPhone] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [processingMpesa, setProcessingMpesa] = useState(false)
   const [error, setError] = useState('')
   const [orderPlaced, setOrderPlaced] = useState(false)
   const [orderNumber, setOrderNumber] = useState('')
+  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null)
+  const [copied, setCopied] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -97,13 +114,17 @@ export default function Checkout() {
 
   const placeOrder = async () => {
     if (!locationDetails || !phone) {
-      setError('Please fill in delivery location and phone number')
+      setError('Please fill in delivery location and contact phone number')
+      return
+    }
+    if (paymentMethod === 'MPESA' && !mpesaPhone) {
+      setError('Please enter the M-Pesa phone number to pay with')
       return
     }
     setError('')
     setSubmitting(true)
     try {
-      const res = await fetch('/api/customers/orders', {
+      const orderRes = await fetch('/api/customers/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -114,18 +135,50 @@ export default function Checkout() {
           phone,
         }),
       })
-      const data = await res.json()
-      if (res.ok) {
+      const orderData = await orderRes.json()
+      if (!orderRes.ok) {
+        setError(orderData.error || 'Failed to place order')
+        setSubmitting(false)
+        return
+      }
+
+      setOrderNumber(orderData.orderNumber)
+
+      if (paymentMethod === 'MPESA') {
+        setSubmitting(false)
+        setProcessingMpesa(true)
+
+        const mpesaRes = await fetch('/api/payments/mpesa', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: orderData.id,
+            amount: total,
+            phoneNumber: mpesaPhone,
+          }),
+        })
+        const mpesaData = await mpesaRes.json()
+
+        if (!mpesaRes.ok) {
+          setError(mpesaData.error || 'M-Pesa payment failed')
+          setProcessingMpesa(false)
+          return
+        }
+
         sessionStorage.removeItem('cart')
-        setOrderNumber(data.orderNumber || data.id)
+        setReceiptData(mpesaData.receipt)
+        setProcessingMpesa(false)
         setOrderPlaced(true)
       } else {
-        setError(data.error || 'Failed to place order')
+        sessionStorage.removeItem('cart')
+        setSubmitting(false)
+        setOrderPlaced(true)
       }
     } catch {
       setError('Network error. Please try again.')
+      setSubmitting(false)
+      setProcessingMpesa(false)
     }
-    setSubmitting(false)
   }
 
   if (loading) {
@@ -140,7 +193,123 @@ export default function Checkout() {
     )
   }
 
+  if (processingMpesa) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Head><title>Processing Payment - Danoscar Bite</title></Head>
+        <div className="glass-card !p-8 max-w-md w-full text-center animate-scale-in">
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-primary-500/20">
+            <Smartphone className="h-10 w-10 text-white" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white font-heading mb-2">Check Your Phone</h2>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
+            An M-Pesa payment prompt has been sent to <strong className="text-gray-900 dark:text-white">{mpesaPhone.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3')}</strong>
+          </p>
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4 mb-4">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Loader2 className="h-5 w-5 animate-spin text-primary-500" />
+              <p className="text-sm font-medium text-gray-900 dark:text-white">Waiting for confirmation...</p>
+            </div>
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              1. Enter your M-Pesa PIN on your phone<br />
+              2. Confirm the payment to <strong>Danoscar Bite</strong><br />
+              3. Wait for confirmation
+            </p>
+          </div>
+          <p className="text-xs text-gray-400 dark:text-gray-400">
+            Amount: <strong className="text-gray-900 dark:text-white">KES {total.toFixed(2)}</strong>
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   if (orderPlaced) {
+    if (receiptData) {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <Head><title>Receipt - Danoscar Bite</title></Head>
+          <div className="glass-card !p-6 max-w-md w-full animate-scale-in">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-success-400 to-success-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-success-500/20">
+                <CheckCircle className="h-8 w-8 text-white" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white font-heading">Payment Successful!</h2>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">M-Pesa receipt</p>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-5 space-y-4">
+              <div className="text-center">
+                <p className="text-lg font-bold text-gray-900 dark:text-white font-heading">{receiptData.businessName}</p>
+              </div>
+
+              <div className="border-t border-dashed border-gray-200 dark:border-gray-700 pt-4 space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-400">Order</span>
+                  <span className="font-mono font-semibold text-gray-900 dark:text-white">{receiptData.orderNumber}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-400">Transaction Code</span>
+                  <span className="font-mono font-semibold text-primary-500">{receiptData.transactionCode}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-400">Phone</span>
+                  <span className="font-mono text-gray-900 dark:text-white">{receiptData.phoneNumber}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-400">Date</span>
+                  <span className="text-gray-900 dark:text-white">{new Date(receiptData.date).toLocaleString('en-KE')}</span>
+                </div>
+              </div>
+
+              <div className="border-t border-dashed border-gray-200 dark:border-gray-700 pt-4">
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Items</p>
+                <div className="space-y-2">
+                  {receiptData.items.map((item, i) => (
+                    <div key={i} className="flex justify-between text-xs">
+                      <span className="text-gray-700 dark:text-gray-300">
+                        {item.name} <span className="text-gray-400">x{item.quantity}</span>
+                      </span>
+                      <span className="font-medium text-gray-900 dark:text-white">KES {item.total.toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-dashed border-gray-200 dark:border-gray-700 pt-3">
+                <div className="flex justify-between font-bold text-gray-900 dark:text-white">
+                  <span>Total Paid</span>
+                  <span className="text-primary-500">KES {receiptData.amount.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(receiptData.transactionCode).then(() => {
+                    setCopied(true)
+                    setTimeout(() => setCopied(false), 2000)
+                  })
+                }}
+                className="w-full py-3 rounded-2xl text-sm font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                <Copy size={14} />
+                {copied ? 'Copied!' : 'Copy Transaction Code'}
+              </button>
+              <Link
+                href="/customer"
+                className="w-full py-3 rounded-2xl text-sm font-semibold gradient-primary text-white shadow-lg shadow-orange-500/20 hover:shadow-xl hover:shadow-orange-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                <ArrowLeft size={16} />
+                Back to Menu
+              </Link>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Head><title>Order Placed - Danoscar Bite</title></Head>
@@ -283,6 +452,25 @@ export default function Checkout() {
               )
             })}
           </div>
+
+          {paymentMethod === 'MPESA' && (
+            <div className="mt-3 p-4 rounded-2xl bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/20 space-y-3">
+              <div className="flex items-center gap-2">
+                <Smartphone size={16} className="text-green-600 dark:text-green-400" />
+                <p className="text-sm font-semibold text-green-800 dark:text-green-300">M-Pesa Payment</p>
+              </div>
+              <p className="text-xs text-green-700 dark:text-green-400">
+                Enter the phone number you will use to pay via M-Pesa. We will send a payment prompt to this number.
+              </p>
+              <input
+                type="tel"
+                value={mpesaPhone}
+                onChange={e => setMpesaPhone(e.target.value)}
+                className="input-premium text-sm !border-green-300 dark:!border-green-700 focus:!border-green-500"
+                placeholder="e.g. 0712 345 678"
+              />
+            </div>
+          )}
         </div>
 
         <div className="glass-card !p-5">
@@ -332,11 +520,19 @@ export default function Checkout() {
 
         <button
           onClick={placeOrder}
-          disabled={submitting || cart.length === 0}
+          disabled={submitting || processingMpesa || cart.length === 0}
           className="btn-primary w-full !py-4 !rounded-2xl !text-base disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none disabled:hover:shadow-none flex items-center justify-center gap-2"
         >
-          {submitting && <Loader2 className="h-5 w-5 animate-spin" />}
-          {submitting ? 'Placing Order...' : `Place Order — KES ${total.toFixed(2)}`}
+          {submitting ? (
+            <><Loader2 className="h-5 w-5 animate-spin" /> Placing Order...</>
+          ) : paymentMethod === 'MPESA' ? (
+            <>
+              <Smartphone size={18} />
+              Pay with M-Pesa — KES {total.toFixed(2)}
+            </>
+          ) : (
+            `Place Order — KES ${total.toFixed(2)}`
+          )}
         </button>
       </div>
     </div>

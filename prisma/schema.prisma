@@ -32,8 +32,25 @@ model User {
   orders        Order[]       @relation("OrderCustomer")
   deliveries    Order[]       @relation("OrderDeliveryPerson")
   deliveryJobs  Delivery[]    @relation("DeliveryDeliveryPerson")
+  notifications Notification[]
 
   @@map("users")
+}
+
+// Notification model
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   @default("info")
+  title     String
+  message   String
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
 }
 
 // Customer profile model

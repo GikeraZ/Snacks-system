@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '../../../lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
+import { createOrderNotification } from '../../../lib/notifications'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -87,6 +88,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         where: { id },
         data: { status },
       })
+
+      await createOrderNotification(id, status)
+
       return res.status(200).json(JSON.parse(JSON.stringify(order)))
     }
 

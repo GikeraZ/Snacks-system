@@ -5,6 +5,7 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { ShoppingCart, MapPin, CreditCard, ChevronLeft, CheckCircle, Loader2, Phone, Building2, Clock, Receipt, ArrowLeft } from 'lucide-react'
+import NotificationBell from '../../components/ui/NotificationBell'
 
 interface CartItem {
   id: string
@@ -91,7 +92,7 @@ export default function Checkout() {
   }, [router])
 
   const subtotal = cart.reduce((sum, item) => sum + item.sellingPrice * item.quantity, 0)
-  const deliveryFee = subtotal > 1000 ? 0 : 50
+  const deliveryFee = 0
   const total = subtotal + deliveryFee
 
   const placeOrder = async () => {
@@ -173,11 +174,14 @@ export default function Checkout() {
       </Head>
 
       <header className="sticky top-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50">
-        <div className="px-4 py-4 flex items-center">
-          <button onClick={() => router.back()} className="p-2 -ml-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-            <ChevronLeft className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-          </button>
-          <h1 className="text-lg font-bold text-gray-900 dark:text-white font-heading ml-2">Checkout</h1>
+        <div className="px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center">
+            <button onClick={() => router.back()} className="p-2 -ml-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+              <ChevronLeft className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+            </button>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white font-heading ml-2">Checkout</h1>
+          </div>
+          <NotificationBell compact />
         </div>
       </header>
 

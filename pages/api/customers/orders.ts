@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '../../../lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
+import { createOrderNotification } from '../../../lib/notifications'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -42,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         })
       }
 
-      const deliveryFee = totalAmount > 1000 ? 0 : 50
+      const deliveryFee = 0
       totalAmount += deliveryFee
 
       const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
@@ -75,6 +76,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           },
         },
         include: { orderItems: true },
+      })
+
+      await prisma.notification.create({
+        data: {
+          userId: session.user.id,
+          type: 'order',
+          title: 'Order Placed',
+          message: `Your order ${orderNumber} has been placed successfully.`,
+          link: '/customer/orders',
+        },
       })
 
       return res.status(201).json({

@@ -112,9 +112,11 @@ export interface DashboardStats {
 
 export interface Notification {
   id: string
+  userId: string
   title: string
   message: string
   type: 'order' | 'success' | 'warning' | 'info'
-  time: string
+  link?: string
   read: boolean
+  createdAt: string
 }

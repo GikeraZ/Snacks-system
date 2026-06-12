@@ -22,19 +22,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!session || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'BUSINESS_PARTNER')) {
         return res.status(401).json({ error: 'Unauthorized' })
       }
-      const { name, categoryId, costPrice, sellingPrice, stockQuantity, lowStockAlert } = req.body
+      const { name, categoryId, costPrice, sellingPrice, stockQuantity, lowStockAlert, imageUrl, description } = req.body
       if (!name || !categoryId) {
         return res.status(400).json({ error: 'Name and category are required' })
       }
       const product = await prisma.product.create({
         data: {
           name,
-          slug: name.toLowerCase().replace(/\s+/g, '-'),
+          slug: name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
           categoryId,
           costPrice: Number(costPrice) || 0,
           sellingPrice: Number(sellingPrice) || 0,
           stockQuantity: Number(stockQuantity) || 0,
           lowStockAlert: Number(lowStockAlert) || 10,
+          ...(imageUrl && { imageUrl }),
+          ...(description && { description }),
         },
       })
       return res.status(201).json(product)

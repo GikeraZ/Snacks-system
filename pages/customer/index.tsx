@@ -15,6 +15,7 @@ import HeroBanner from '../../components/customer/HeroBanner'
 import FloatingCart from '../../components/customer/FloatingCart'
 import LoyaltyBadge from '../../components/customer/LoyaltyBadge'
 import BottomNav from '../../components/layout/BottomNav'
+import NotificationBell from '../../components/ui/NotificationBell'
 
 interface CustomerMenuProps {
   role: string
@@ -176,7 +177,8 @@ export default function CustomerMenu({ role, categories }: CustomerMenuProps) {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <NotificationBell compact />
                 <button className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-xs font-bold rounded-xl border border-amber-200/50 dark:border-amber-700/30">
                   <Star size={14} className="fill-amber-400 text-amber-400" />
                   120 pts
@@ -629,7 +631,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     include: {
       products: {
         where: { isActive: true },
-        take: 20,
+        orderBy: { updatedAt: 'desc' },
+        take: 50,
       },
     },
     orderBy: { name: 'asc' },

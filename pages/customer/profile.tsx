@@ -10,6 +10,7 @@ import {
   LogOut, Award, Star, TrendingUp, Shield
 } from 'lucide-react'
 import BottomNav from '../../components/layout/BottomNav'
+import NotificationBell from '../../components/ui/NotificationBell'
 
 export default function CustomerProfile() {
   const { data: session } = useSession()
@@ -23,11 +24,14 @@ export default function CustomerProfile() {
 
       <div className="page-container min-h-screen">
         <header className="sticky top-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50">
-          <div className="px-4 py-4 flex items-center">
-            <button onClick={() => router.back()} className="p-2 -ml-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-              <ChevronLeft className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-            </button>
-            <h1 className="text-lg font-bold text-gray-900 dark:text-white font-heading ml-2">My Profile</h1>
+          <div className="px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center">
+              <button onClick={() => router.back()} className="p-2 -ml-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <ChevronLeft className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+              </button>
+              <h1 className="text-lg font-bold text-gray-900 dark:text-white font-heading ml-2">My Profile</h1>
+            </div>
+            <NotificationBell compact />
           </div>
         </header>
 

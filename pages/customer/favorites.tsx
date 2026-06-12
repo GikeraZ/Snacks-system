@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Heart, ChevronLeft, ShoppingBag, Plus, Minus, ArrowRight, Trash2, Clock } from 'lucide-react'
 import BottomNav from '../../components/layout/BottomNav'
+import NotificationBell from '../../components/ui/NotificationBell'
 
 interface Product {
   id: string
@@ -87,14 +88,17 @@ export default function CustomerFavorites() {
               </button>
               <h1 className="text-lg font-bold text-gray-900 dark:text-white font-heading ml-2">My Favorites</h1>
             </div>
-            {Object.keys(cart).length > 0 && (
-              <button
-                onClick={checkout}
-                className="btn-primary !py-2 !px-4 !text-sm !rounded-xl"
-              >
-                Cart ({Object.values(cart).reduce((a, b) => a + b, 0)})
-              </button>
-            )}
+            <div className="flex items-center gap-1">
+              <NotificationBell compact />
+              {Object.keys(cart).length > 0 && (
+                <button
+                  onClick={checkout}
+                  className="btn-primary !py-2 !px-4 !text-sm !rounded-xl"
+                >
+                  Cart ({Object.values(cart).reduce((a, b) => a + b, 0)})
+                </button>
+              )}
+            </div>
           </div>
         </header>
 

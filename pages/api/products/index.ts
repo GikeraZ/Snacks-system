@@ -22,10 +22,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!session || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'BUSINESS_PARTNER')) {
         return res.status(401).json({ error: 'Unauthorized' })
       }
-      const { name, categoryId, costPrice, sellingPrice, stockQuantity, lowStockAlert, imageUrl, description } = req.body
+      const { name, categoryId, costPrice, sellingPrice, stockQuantity, lowStockAlert, imageUrl, imageData, description } = req.body
       if (!name || !categoryId) {
         return res.status(400).json({ error: 'Name and category are required' })
       }
+
       const product = await prisma.product.create({
         data: {
           name,
@@ -35,10 +36,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           sellingPrice: Number(sellingPrice) || 0,
           stockQuantity: Number(stockQuantity) || 0,
           lowStockAlert: Number(lowStockAlert) || 10,
-          ...(imageUrl && { imageUrl }),
+          imageUrl: imageUrl || (imageData ? '' : imageUrl),
+          imageData: imageData || undefined,
           ...(description && { description }),
         },
       })
+
+      if (imageData) {
+        await prisma.product.update({
+          where: { id: product.id },
+          data: { imageUrl: `/api/images/${product.id}` },
+        })
+        product.imageUrl = `/api/images/${product.id}`
+      }
       return res.status(201).json(product)
     }
 
@@ -46,7 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!session || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'BUSINESS_PARTNER')) {
         return res.status(401).json({ error: 'Unauthorized' })
       }
-      const { id, name, categoryId, costPrice, sellingPrice, stockQuantity, lowStockAlert, description, imageUrl, isActive } = req.body
+      const { id, name, categoryId, costPrice, sellingPrice, stockQuantity, lowStockAlert, description, imageUrl, imageData, isActive } = req.body
       if (!id) return res.status(400).json({ error: 'ID is required' })
 
       const data: Record<string, unknown> = {}
@@ -58,6 +68,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (stockQuantity !== undefined) data.stockQuantity = Number(stockQuantity)
       if (lowStockAlert !== undefined) data.lowStockAlert = Number(lowStockAlert)
       if (description !== undefined) data.description = description
+      if (imageData !== undefined) data.imageData = imageData
       if (imageUrl !== undefined) data.imageUrl = imageUrl
       if (isActive !== undefined) data.isActive = isActive
 

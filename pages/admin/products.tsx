@@ -30,7 +30,7 @@ export default function ProductsPage({ categories, initialProducts, role }: Prod
   const [editing, setEditing] = useState<any>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [form, setForm] = useState({ name: '', description: '', categoryId: categories[0]?.id || '', sellingPrice: '', costPrice: '', stockQuantity: '0', imageUrl: '' })
+  const [form, setForm] = useState({ name: '', description: '', categoryId: categories[0]?.id || '', sellingPrice: '', costPrice: '', stockQuantity: '0', imageUrl: '', imageData: '' })
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -41,7 +41,7 @@ export default function ProductsPage({ categories, initialProducts, role }: Prod
 
   const openAdd = () => {
     setEditing(null)
-    setForm({ name: '', description: '', categoryId: categories[0]?.id || '', sellingPrice: '', costPrice: '', stockQuantity: '0', imageUrl: '' })
+    setForm({ name: '', description: '', categoryId: categories[0]?.id || '', sellingPrice: '', costPrice: '', stockQuantity: '0', imageUrl: '', imageData: '' })
     setImagePreview(null)
     setShowModal('add')
     setError('')
@@ -57,6 +57,7 @@ export default function ProductsPage({ categories, initialProducts, role }: Prod
       costPrice: product.costPrice.toString(),
       stockQuantity: product.stockQuantity.toString(),
       imageUrl: product.imageUrl || '',
+      imageData: '',
     })
     setImagePreview(product.imageUrl || null)
     setShowModal('edit')
@@ -82,14 +83,19 @@ export default function ProductsPage({ categories, initialProducts, role }: Prod
       })
 
       setImagePreview(imageData)
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: imageData, fileName: file.name }),
-      })
-      const data = await res.json()
-      if (res.ok) setForm(prev => ({ ...prev, imageUrl: data.url }))
-      else setError(data.error || 'Upload failed')
+
+      if (editing?.id) {
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: imageData, fileName: file.name, productId: editing.id }),
+        })
+        const data = await res.json()
+        if (res.ok) setForm(prev => ({ ...prev, imageUrl: data.url }))
+        else setError(data.error || 'Upload failed')
+      } else {
+        setForm(prev => ({ ...prev, imageData }))
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     }

@@ -96,6 +96,7 @@ model Product {
   costPrice       Float
   sellingPrice    Float
   imageUrl        String?
+  imageData       String?
   isActive        Boolean     @default(true)
   isFeatured      Boolean     @default(false)
   stockQuantity   Int         @default(0)

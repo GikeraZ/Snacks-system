@@ -1,8 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
+import { prisma } from '../../lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from './auth/[...nextauth]'
-import fs from 'fs'
-import path from 'path'
 
 export const config = {
   api: {
@@ -24,22 +23,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(405).end(`Method ${req.method} Not Allowed`)
     }
 
-    const { image, fileName } = req.body
+    const { image, fileName, productId } = req.body
     if (!image) return res.status(400).json({ error: 'No image data' })
 
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'products')
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true })
+    if (productId) {
+      await prisma.product.update({
+        where: { id: productId },
+        data: { imageData: image, imageUrl: '' },
+      })
+      return res.status(200).json({ url: `/api/images/${productId}` })
     }
 
-    const ext = fileName?.split('.').pop() || 'png'
-    const name = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
-    const filePath = path.join(uploadDir, name)
-
-    const base64Data = image.replace(/^data:image\/\w+;base64,/, '')
-    fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'))
-
-    const url = `/uploads/products/${name}`
+    const url = image.startsWith('data:') ? '' : image
     return res.status(200).json({ url })
   } catch (error) {
     console.error('Upload error:', error)

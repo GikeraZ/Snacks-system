@@ -67,30 +67,19 @@ export default function ProductsPage({ categories, initialProducts, role }: Prod
     const file = e.target.files?.[0]
     if (!file) return
 
+    if (file.size > 4 * 1024 * 1024) {
+      setError('Image too large. Maximum 4MB.')
+      return
+    }
+
     setUploading(true)
     try {
-      const raw = await new Promise<string>((resolve, reject) => {
-        const r = new FileReader()
-        r.onload = () => resolve(r.result as string)
-        r.onerror = () => reject(new Error('Failed to read file'))
-        r.readAsDataURL(file)
+      const imageData = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = () => reject(new Error('Failed to read file'))
+        reader.readAsDataURL(file)
       })
-
-      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const i = new Image()
-        i.onload = () => resolve(i)
-        i.onerror = () => reject(new Error('Failed to decode image'))
-        i.src = raw
-      })
-
-      const canvas = document.createElement('canvas')
-      const maxW = 800
-      let { width, height } = img
-      if (width > maxW) { height *= maxW / width; width = maxW }
-      canvas.width = width; canvas.height = height
-      const ctx = canvas.getContext('2d')!
-      ctx.drawImage(img, 0, 0, width, height)
-      const imageData = canvas.toDataURL('image/jpeg', 0.8)
 
       setImagePreview(imageData)
       const res = await fetch('/api/upload', {
@@ -102,7 +91,7 @@ export default function ProductsPage({ categories, initialProducts, role }: Prod
       if (res.ok) setForm(prev => ({ ...prev, imageUrl: data.url }))
       else setError(data.error || 'Upload failed')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed')
+      setError(err instanceof Error ? err.message : 'Unknown error')
     }
     setUploading(false)
   }

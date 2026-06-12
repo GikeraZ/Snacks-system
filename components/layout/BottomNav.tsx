@@ -86,9 +86,9 @@ export default function BottomNav({ role }: BottomNavProps) {
 
   return (
     <>
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 safe-area-bottom">
+      <nav className="lg:hidden fixed top-0 left-0 right-0 z-50 safe-area-top">
         <div className="relative">
-          <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/90 backdrop-blur-xl border-t border-gray-100 dark:border-gray-800" />
+          <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800" />
           <div className="relative flex items-center justify-around h-16 px-2">
             {items.slice(0, 4).map((item) => {
               const isActive = router.pathname === item.href || router.pathname.startsWith(item.href.replace(/\/[^/]+$/, ''))
@@ -102,7 +102,7 @@ export default function BottomNav({ role }: BottomNavProps) {
                   }`}
                 >
                   {isActive && (
-                    <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-gradient-to-r from-primary-400 to-primary-600 rounded-full shadow-sm shadow-primary-500/30" />
+                    <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-gradient-to-r from-primary-400 to-primary-600 rounded-full shadow-sm shadow-primary-500/30" />
                   )}
                   <div className={`p-1.5 rounded-xl transition-all duration-200 ${
                     isActive

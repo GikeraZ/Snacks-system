@@ -173,7 +173,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .content-area {
   padding: 1rem;
-  padding-bottom: 6rem;
+  padding-top: 5rem;
   position: relative;
   z-index: 1;
 }
@@ -181,14 +181,14 @@ h1, h2, h3, h4, h5, h6 {
 @media (min-width: 768px) {
   .content-area {
     padding: 1.5rem;
-    padding-bottom: 1.5rem;
+    padding-top: 5rem;
   }
 }
 
 @media (min-width: 1024px) {
   .content-area {
     padding: 2rem;
-    padding-bottom: 2rem;
+    padding-top: 2rem;
   }
 }
 
@@ -488,6 +488,10 @@ h1, h2, h3, h4, h5, h6 {
 
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* ============ PREMIUX BUTTON ============ */

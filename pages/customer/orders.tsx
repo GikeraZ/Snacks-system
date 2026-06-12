@@ -135,8 +135,8 @@ export default function CustomerOrders() {
     <>
       <Head><title>My Orders - Danoscar Bite</title></Head>
 
-      <div className="page-container min-h-screen">
-        <header className="sticky top-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50">
+      <div className="page-container min-h-screen pt-16 lg:pt-0">
+        <header className="sticky top-16 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50">
           <div className="px-4 py-4 flex items-center justify-between">
             <div className="flex items-center">
               <button onClick={() => router.back()} className="p-2 -ml-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">

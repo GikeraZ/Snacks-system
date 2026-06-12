@@ -68,7 +68,7 @@ export default function Sidebar({ role }: SidebarProps) {
     <>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 rounded-xl glass shadow-lg"
+        className="lg:hidden fixed top-20 left-4 z-50 p-2.5 rounded-xl glass shadow-lg"
       >
         {isOpen ? <X size={20} className="text-gray-700 dark:text-gray-200" /> : <Menu size={20} className="text-gray-700 dark:text-gray-200" />}
       </button>
@@ -78,7 +78,7 @@ export default function Sidebar({ role }: SidebarProps) {
         transition-all duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         ${collapsed ? 'w-20' : 'w-64'}
-        lg:translate-x-0
+        lg:translate-x-0 lg:pt-0 pt-16
       `}>
         <div className={`flex items-center h-16 px-4 border-b border-white/5 ${collapsed ? 'justify-center' : ''}`}>
           <div className="flex items-center gap-3">

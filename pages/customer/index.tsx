@@ -160,9 +160,9 @@ export default function CustomerMenu({ role, categories }: CustomerMenuProps) {
   return (
     <>
       <Head><title>Danoscar Bite — Campus Delivery</title></Head>
-      <div className="min-h-screen page-container">
+      <div className="min-h-screen page-container pt-16 lg:pt-0">
         {/* Header */}
-        <header className="sticky top-0 z-30 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50">
+        <header className="sticky top-16 z-30 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50">
           <div className="max-w-7xl mx-auto px-4 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">

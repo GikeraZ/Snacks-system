@@ -63,28 +63,40 @@ export default function ProductsPage({ categories, initialProducts, role }: Prod
     setError('')
   }
 
+  const compressImage = (file: File, maxW = 800): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let { width, height } = img
+        if (width > maxW) { height *= maxW / width; width = maxW }
+        canvas.width = width; canvas.height = height
+        const ctx = canvas.getContext('2d')!
+        ctx.drawImage(img, 0, 0, width, height)
+        resolve(canvas.toDataURL('image/jpeg', 0.8))
+      }
+      img.onerror = reject
+      img.src = URL.createObjectURL(file)
+    })
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    const reader = new FileReader()
-    reader.onload = async (event) => {
-      const imageData = event.target?.result as string
+    setUploading(true)
+    try {
+      const imageData = await compressImage(file)
       setImagePreview(imageData)
-      setUploading(true)
-      try {
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: imageData, fileName: file.name }),
-        })
-        const data = await res.json()
-        if (res.ok) setForm(prev => ({ ...prev, imageUrl: data.url }))
-        else setError('Upload failed')
-      } catch { setError('Upload failed') }
-      setUploading(false)
-    }
-    reader.readAsDataURL(file)
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: imageData, fileName: file.name }),
+      })
+      const data = await res.json()
+      if (res.ok) setForm(prev => ({ ...prev, imageUrl: data.url }))
+      else setError('Upload failed')
+    } catch { setError('Upload failed') }
+    setUploading(false)
   }
 
   const handleSave = async () => {

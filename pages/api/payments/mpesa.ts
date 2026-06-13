@@ -32,6 +32,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: 'M-Pesa phone number is required' })
       }
 
+      const existing = await prisma.order.findUnique({
+        where: { id: orderId },
+        select: { paymentStatus: true, customerId: true },
+      })
+      if (!existing) {
+        return res.status(404).json({ error: 'Order not found' })
+      }
+      if (existing.paymentStatus === 'COMPLETED') {
+        return res.status(400).json({ error: 'Order already paid' })
+      }
+      if (existing.customerId !== session.user.id) {
+        return res.status(403).json({ error: 'Order does not belong to you' })
+      }
+
       const mpesaReceipt = generateMpesaReceipt()
       const mpesaCode = `MP${Date.now()}`
 
@@ -51,14 +65,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
       })
 
-      // Update stock for POS orders where it wasn't decremented yet
-      if (order.notes?.includes('POS sale')) {
-        for (const item of order.orderItems) {
-          await prisma.product.update({
-            where: { id: item.productId },
-            data: { stockQuantity: { decrement: item.quantity } },
-          })
-        }
+      for (const item of order.orderItems) {
+        await prisma.product.update({
+          where: { id: item.productId },
+          data: { stockQuantity: { decrement: item.quantity } },
+        })
       }
 
       const pointsEarned = Math.floor(Number(amount))

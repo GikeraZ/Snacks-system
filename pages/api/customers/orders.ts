@@ -1,8 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { prisma } from '../../../lib/prisma'
+import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
-import { createOrderNotification } from '../../../lib/notifications'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -33,6 +32,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (!product) {
           return res.status(400).json({ error: `Product ${item.productId} not found` })
         }
+        if (!product.isActive) {
+          return res.status(400).json({ error: `${product.name} is not available` })
+        }
+        if (product.stockQuantity < item.quantity) {
+          return res.status(400).json({ error: `Insufficient stock for ${product.name}` })
+        }
+        if (item.quantity < 1) {
+          return res.status(400).json({ error: 'Invalid quantity' })
+        }
         const itemTotal = Number(product.sellingPrice) * item.quantity
         totalAmount += itemTotal
         orderItemsData.push({
@@ -48,20 +56,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
 
-      const matchedUser = await prisma.user.findFirst({
-        where: { phone },
-        select: { id: true },
-      })
-
-      const customer = matchedUser
-        ? await prisma.customer.findUnique({ where: { userId: matchedUser.id } })
-        : null
-
       const order = await prisma.order.create({
         data: {
           orderNumber,
-          customerId: customer?.userId || session.user.id,
+          customerId: session.user.id,
           paymentMethod,
+          paymentStatus: paymentMethod === 'MPESA' ? 'PENDING' : 'COMPLETED',
           totalAmount,
           deliveryFee,
           notes: deliveryNotes,
@@ -77,6 +77,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
         include: { orderItems: true },
       })
+
+      if (paymentMethod !== 'MPESA') {
+        for (const item of items) {
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: { stockQuantity: { decrement: item.quantity } },
+          })
+        }
+        await prisma.user.update({
+          where: { id: session.user.id },
+          data: { loyaltyPoints: { increment: Math.floor(totalAmount) } },
+        })
+      }
 
       await prisma.notification.create({
         data: {

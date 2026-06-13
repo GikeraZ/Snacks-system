@@ -27,6 +27,9 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return
   if (request.url.includes('/api/')) return
 
+  const url = new URL(request.url)
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return
+
   event.respondWith(
     caches.match(request).then((cached) => {
       const fetchPromise = fetch(request).then((response) => {

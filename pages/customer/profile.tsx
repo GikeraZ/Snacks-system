@@ -1,5 +1,6 @@
 import { GetServerSideProps } from 'next'
 import { getSession } from 'next-auth/react'
+import { prisma } from '../../lib/prisma'
 import { useSession } from 'next-auth/react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
@@ -12,7 +13,13 @@ import {
 import BottomNav from '../../components/layout/BottomNav'
 import NotificationBell from '../../components/ui/NotificationBell'
 
-export default function CustomerProfile() {
+interface Props {
+  loyaltyPoints: number
+  totalSpent: number
+  totalOrders: number
+}
+
+export default function CustomerProfile({ loyaltyPoints, totalSpent, totalOrders }: Props) {
   const { data: session } = useSession()
   const router = useRouter()
   const role = session?.user?.role || 'CUSTOMER'
@@ -96,14 +103,14 @@ export default function CustomerProfile() {
               <div className="p-4 rounded-2xl bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/10 text-center">
                 <Star size={20} className="text-primary-500 mx-auto mb-1" />
                 <p className="text-2xl font-bold text-primary-500 font-heading">
-                  {(user as any)?.loyaltyPoints ?? 0}
+                  {loyaltyPoints}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Points</p>
               </div>
               <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/10 text-center">
                 <TrendingUp size={20} className="text-purple-500 mx-auto mb-1" />
-                <p className="text-2xl font-bold text-purple-500 font-heading">Silver</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Tier</p>
+                <p className="text-2xl font-bold text-purple-500 font-heading">{totalOrders}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Orders</p>
               </div>
             </div>
           </motion.div>
@@ -162,5 +169,23 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   if (!session || session.user.role !== 'CUSTOMER') {
     return { redirect: { destination: '/auth/login', permanent: false } }
   }
-  return { props: {} }
+
+  const [userData, orderData] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { loyaltyPoints: true },
+    }),
+    prisma.order.findMany({
+      where: { customerId: session.user.id },
+      select: { totalAmount: true },
+    }),
+  ])
+
+  return {
+    props: {
+      loyaltyPoints: userData?.loyaltyPoints ?? 0,
+      totalSpent: orderData.reduce((s, o) => s + Number(o.totalAmount), 0),
+      totalOrders: orderData.length,
+    },
+  }
 }

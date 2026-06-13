@@ -17,6 +17,13 @@ import LoyaltyBadge from '../../components/customer/LoyaltyBadge'
 import BottomNav from '../../components/layout/BottomNav'
 import NotificationBell from '../../components/ui/NotificationBell'
 
+interface ActiveOrder {
+  id: string
+  orderNumber: string
+  status: string
+  createdAt: string
+}
+
 interface CustomerMenuProps {
   role: string
   categories: Array<{
@@ -33,6 +40,8 @@ interface CustomerMenuProps {
       categoryId?: string
     }>
   }>
+  activeOrder: ActiveOrder | null
+  loyaltyPoints: number
 }
 
 const categoryIcons: Record<string, string> = {
@@ -52,7 +61,7 @@ const categoryIcons: Record<string, string> = {
   'Special Meals': '🍱',
 }
 
-export default function CustomerMenu({ role, categories }: CustomerMenuProps) {
+export default function CustomerMenu({ role, categories, activeOrder, loyaltyPoints }: CustomerMenuProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [cart, setCart] = useState<Record<string, number>>({})
@@ -151,12 +160,6 @@ export default function CustomerMenu({ role, categories }: CustomerMenuProps) {
 
   const productGridClass = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4'
 
-  const activeOrder = {
-    status: 'PREPARING',
-    orderNumber: '#1248',
-    estimatedTime: '12 min',
-  }
-
   return (
     <>
       <Head><title>Danoscar Bite — Campus Delivery</title></Head>
@@ -181,7 +184,7 @@ export default function CustomerMenu({ role, categories }: CustomerMenuProps) {
                 <NotificationBell compact />
                 <button className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-xs font-bold rounded-xl border border-amber-200/50 dark:border-amber-700/30">
                   <Star size={14} className="fill-amber-400 text-amber-400" />
-                  120 pts
+                  {loyaltyPoints} pts
                 </button>
                 <div ref={userMenuRef} className="relative">
                   <button
@@ -275,54 +278,65 @@ export default function CustomerMenu({ role, categories }: CustomerMenuProps) {
 
           {/* Loyalty Points (mobile) */}
           <div className="sm:hidden">
-            <LoyaltyBadge points={120} />
+            <LoyaltyBadge points={loyaltyPoints} />
           </div>
 
           {/* Active Delivery Tracking */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mx-4 mt-4 p-4 rounded-2xl bg-white dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700/50 shadow-sm"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Bike size={16} className="text-primary-500" />
-                Active Order
-              </h3>
-              <span className="text-xs text-gray-400">{activeOrder.orderNumber}</span>
-            </div>
-            <div className="flex items-center justify-between gap-1">
-              {[
-                { icon: Clock, label: 'Received', done: true },
-                { icon: ChefHat, label: 'Preparing', done: true },
-                { icon: Bike, label: 'Delivery', done: false },
-                { icon: MapPin, label: 'Delivered', done: false },
-              ].map((step, idx) => (
-                <div key={step.label} className="flex flex-col items-center gap-1.5 flex-1">
-                  <div className={`relative flex items-center justify-center w-full`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      step.done
-                        ? 'bg-gradient-to-br from-primary-400 to-primary-600 text-white shadow-md shadow-primary-500/20'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-300 dark:text-gray-500'
-                    }`}>
-                      <step.icon size={14} />
-                    </div>
-                    {idx < 3 && (
-                      <div className={`absolute left-[calc(50%+16px)] top-1/2 h-0.5 w-[calc(100%-32px)] ${
-                        idx < 2 ? 'bg-gradient-to-r from-primary-400 to-primary-600' : 'bg-gray-200 dark:bg-gray-700'
-                      }`} />
-                    )}
-                  </div>
-                  <span className={`text-[9px] font-medium ${
-                    step.done ? 'text-primary-500' : 'text-gray-400'
-                  }`}>{step.label}</span>
+          {activeOrder && (() => {
+            const steps = ['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED']
+            const currentIdx = steps.indexOf(activeOrder.status)
+            const displaySteps = [
+              { icon: Clock, label: 'Received' },
+              { icon: ChefHat, label: 'Preparing' },
+              { icon: Bike, label: 'Delivery' },
+              { icon: MapPin, label: 'Delivered' },
+            ]
+            return (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mx-4 mt-4 p-4 rounded-2xl bg-white dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700/50 shadow-sm"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Bike size={16} className="text-primary-500" />
+                    Active Order
+                  </h3>
+                  <span className="text-xs text-gray-400">{activeOrder.orderNumber}</span>
                 </div>
-              ))}
-            </div>
-            <p className="text-[11px] text-gray-400 mt-3 text-center">
-              Estimated {activeOrder.estimatedTime} remaining
-            </p>
-          </motion.div>
+                <div className="flex items-center justify-between gap-1">
+                  {displaySteps.map((step, idx) => {
+                    const stepIdx = idx * 1.5
+                    const done = currentIdx >= stepIdx
+                    return (
+                      <div key={step.label} className="flex flex-col items-center gap-1.5 flex-1">
+                        <div className="relative flex items-center justify-center w-full">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            done
+                              ? 'bg-gradient-to-br from-primary-400 to-primary-600 text-white shadow-md shadow-primary-500/20'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-300 dark:text-gray-500'
+                          }`}>
+                            <step.icon size={14} />
+                          </div>
+                          {idx < 3 && (
+                            <div className={`absolute left-[calc(50%+16px)] top-1/2 h-0.5 w-[calc(100%-32px)] ${
+                              currentIdx > stepIdx ? 'bg-gradient-to-r from-primary-400 to-primary-600' : 'bg-gray-200 dark:bg-gray-700'
+                            }`} />
+                          )}
+                        </div>
+                        <span className={`text-[9px] font-medium ${
+                          done ? 'text-primary-500' : 'text-gray-400'
+                        }`}>{step.label}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <p className="text-[11px] text-gray-400 mt-3 text-center">
+                  {activeOrder.status === 'DELIVERED' ? 'Delivered!' : 'In progress'}
+                </p>
+              </motion.div>
+            )
+          })()}
 
           {/* Categories */}
           <div className="px-4 mt-6">
@@ -626,21 +640,53 @@ export default function CustomerMenu({ role, categories }: CustomerMenuProps) {
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getSession(context)
-  const allCategories = await prisma.category.findMany({
-    where: { isActive: true },
-    include: {
-      products: {
-        where: { isActive: true },
-        orderBy: { updatedAt: 'desc' },
-        take: 50,
+
+  const [allCategories, userData] = await Promise.all([
+    prisma.category.findMany({
+      where: { isActive: true },
+      include: {
+        products: {
+          where: { isActive: true },
+          orderBy: { updatedAt: 'desc' },
+          take: 50,
+        },
       },
-    },
-    orderBy: { name: 'asc' },
-  })
+      orderBy: { name: 'asc' },
+    }),
+    session?.user?.id
+      ? prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: { loyaltyPoints: true },
+        })
+      : Promise.resolve(null),
+  ])
+
+  const userId = session?.user?.id
+  let activeOrder = null
+  if (userId) {
+    const order = await prisma.order.findFirst({
+      where: {
+        customerId: userId,
+        status: { in: ['CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY'] },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+    if (order) {
+      activeOrder = {
+        id: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        createdAt: order.createdAt.toISOString(),
+      }
+    }
+  }
+
   return {
     props: {
       role: session?.user?.role || 'CUSTOMER',
       categories: JSON.parse(JSON.stringify(allCategories)),
+      activeOrder,
+      loyaltyPoints: userData?.loyaltyPoints ?? 0,
     },
   }
 }

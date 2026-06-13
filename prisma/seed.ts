@@ -80,6 +80,7 @@ async function main() {
     { pointsPerKES: 1, rewardType: 'FREE_BURGER', requiredPoints: 200 },
   ]
 
+  await prisma.loyaltyRule.deleteMany()
   for (const rule of rules) {
     await prisma.loyaltyRule.create({ data: rule })
   }

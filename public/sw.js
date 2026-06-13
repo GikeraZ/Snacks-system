@@ -1,6 +1,5 @@
 const CACHE = 'danoscar-bite-v1'
 const STATIC_ASSETS = [
-  '/api/manifest',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/icons/icon.svg',
@@ -8,7 +7,7 @@ const STATIC_ASSETS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE).then((cache) => cache.addAll(STATIC_ASSETS)).catch(() => self.skipWaiting())
   )
   self.skipWaiting()
 })
@@ -29,8 +28,8 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(
     caches.match(request).then((cached) => {
-      const fetchPromise = fetch(new Request(request, { redirect: 'follow' })).then((response) => {
-        if (response.ok && response.url === request.url) {
+      const fetchPromise = fetch(request).then((response) => {
+        if (response.ok) {
           const clone = response.clone()
           caches.open(CACHE).then((cache) => cache.put(request, clone))
         }

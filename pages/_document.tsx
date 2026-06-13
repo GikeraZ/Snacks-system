@@ -5,6 +5,7 @@ export default function Document() {
     <Html lang="en">
       <Head>
         <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="description" content="Danoscar Bite - Smart University Snack Center Management System" />
         <meta name="theme-color" content="#F97316" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

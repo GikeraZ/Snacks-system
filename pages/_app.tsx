@@ -2,6 +2,7 @@ import type { AppProps } from 'next/app'
 import { SessionProvider } from 'next-auth/react'
 import { ThemeProvider } from '@/lib/ThemeContext'
 import Layout from '@/components/layout/Layout'
+import ErrorBoundary from '@/components/ErrorBoundary'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
@@ -45,6 +46,7 @@ export default function App({ Component, pageProps: { session, ...pageProps } }:
         <FaviconLoader />
         <PWARegister />
         <Layout>
+          <ErrorBoundary>
           <AnimatePresence mode="wait">
             <motion.div
               key={router.asPath}
@@ -56,6 +58,7 @@ export default function App({ Component, pageProps: { session, ...pageProps } }:
               <Component {...pageProps} />
             </motion.div>
           </AnimatePresence>
+          </ErrorBoundary>
         </Layout>
       </ThemeProvider>
     </SessionProvider>

@@ -12,4 +12,7 @@ next-env.d.ts
 /generated/prisma
 *.db
 *.db-journal
-prisma/migrations
+# prisma/migrations should be tracked — remove from here
+
+.vercel
+.env*.local

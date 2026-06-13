@@ -61,6 +61,7 @@ export default function Checkout() {
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null)
   const [copied, setCopied] = useState(false)
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null)
+  const [pollTick, setPollTick] = useState(0)
   const [pollError, setPollError] = useState('')
   const pollingRef = useRef(false)
   const router = useRouter()
@@ -240,7 +241,12 @@ export default function Checkout() {
       clearTimeout(timeout)
       pollingRef.current = false
     }
-  }, [pendingOrderId])
+  }, [pendingOrderId, pollTick])
+
+  const retryPoll = () => {
+    setPollError('')
+    setPollTick(t => t + 1)
+  }
 
   if (loading) {
     return (
@@ -282,10 +288,7 @@ export default function Checkout() {
           </div>
           {pollError && (
             <button
-              onClick={() => {
-                setPollError('')
-                setPendingOrderId(pendingOrderId)
-              }}
+              onClick={retryPoll}
               className="w-full py-3 rounded-2xl text-sm font-semibold gradient-primary text-white shadow-lg shadow-orange-500/20 mb-3"
             >
               Retry

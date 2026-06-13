@@ -62,6 +62,7 @@ export default function POSPage({ products, categories, role }: Props) {
   const [error, setError] = useState('')
   const [receipt, setReceipt] = useState<ReceiptData | null>(null)
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null)
+  const [pollTick, setPollTick] = useState(0)
   const [pollError, setPollError] = useState('')
   const pollingRef = useRef(false)
   const [copied, setCopied] = useState(false)
@@ -104,8 +105,8 @@ export default function POSPage({ products, categories, role }: Props) {
               unitPrice: i.unitPrice,
               totalPrice: i.totalPrice,
             })),
-            customerPhone: order.customerPhone || order.delivery?.customerPhone || '',
-            cashier: order.cashierName || '',
+            customerPhone: order.delivery?.customerPhone || '',
+            cashier: order.customer?.name || '',
             amountPaid: Number(order.totalAmount),
             change: 0,
             createdAt: order.createdAt,
@@ -132,7 +133,12 @@ export default function POSPage({ products, categories, role }: Props) {
       clearTimeout(timeout)
       pollingRef.current = false
     }
-  }, [pendingOrderId])
+  }, [pendingOrderId, pollTick])
+
+  const retryPoll = () => {
+    setPollError('')
+    setPollTick(t => t + 1)
+  }
 
   const filteredProducts = useMemo(() => {
     let filtered = products
@@ -329,10 +335,7 @@ export default function POSPage({ products, categories, role }: Props) {
           </div>
           {pollError && (
             <button
-              onClick={() => {
-                setPollError('')
-                setPendingOrderId(pendingOrderId)
-              }}
+              onClick={retryPoll}
               className="w-full py-3 rounded-2xl text-sm font-semibold gradient-primary text-white shadow-lg shadow-orange-500/20 mb-3"
             >
               Retry

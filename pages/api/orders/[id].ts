@@ -18,8 +18,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const order = await prisma.order.findUnique({
       where: { id },
       include: {
-        orderItems: { include: { product: { select: { name: true } } } },
+        orderItems: { include: { product: { select: { name: true, sellingPrice: true } } } },
         delivery: { select: { customerPhone: true } },
+        customer: { select: { name: true } },
       },
     })
 

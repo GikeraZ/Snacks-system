@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
+import { stkPush, isConfigured } from '@/lib/mpesa'
 
 function generateMpesaReceipt(): string {
   const prefix = 'PBC'
@@ -34,7 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const existing = await prisma.order.findUnique({
         where: { id: orderId },
-        select: { paymentStatus: true, customerId: true },
+        select: { paymentStatus: true, customerId: true, notes: true },
       })
       if (!existing) {
         return res.status(404).json({ error: 'Order not found' })
@@ -44,6 +45,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       if (existing.customerId !== session.user.id) {
         return res.status(403).json({ error: 'Order does not belong to you' })
+      }
+
+      if (isConfigured()) {
+        const result = await stkPush(phoneNumber, amount, `ORD-${orderId.slice(-8)}`, 'Danoscar Bite Payment')
+
+        if (!result.success) {
+          return res.status(400).json({ error: result.error || 'M-Pesa STK push failed' })
+        }
+
+        await prisma.order.update({
+          where: { id: orderId },
+          data: {
+            paymentMethod: 'MPESA',
+            mpesaCode: result.checkoutRequestId,
+            notes: `CheckoutRequestID: ${result.checkoutRequestId} | ${existing.notes || ''}`,
+          },
+        })
+
+        return res.status(200).json({
+          success: true,
+          checkoutRequestId: result.checkoutRequestId,
+          merchantRequestId: result.merchantRequestId,
+          orderId,
+          message: 'M-Pesa STK push sent. Check your phone to enter PIN.',
+        })
       }
 
       const mpesaReceipt = generateMpesaReceipt()
@@ -58,9 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           mpesaReceipt,
         },
         include: {
-          orderItems: {
-            include: { product: true },
-          },
+          orderItems: { include: { product: true } },
           delivery: true,
         },
       })
@@ -79,36 +103,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
 
       const businessName = (await prisma.receiptSetting.findFirst())?.businessName || 'Danoscar Bite'
-
       const maskedPhone = phoneNumber.replace(/(\d{3})(\d{3})(\d{4})/, '$1****$3')
-
-      const receipt = {
-        businessName,
-        orderNumber: order.orderNumber,
-        transactionCode: mpesaReceipt,
-        amount: Number(amount),
-        phoneNumber: maskedPhone,
-        items: order.orderItems.map(i => ({
-          name: i.product.name,
-          quantity: i.quantity,
-          price: i.unitPrice,
-          total: i.totalPrice,
-        })),
-        date: new Date().toISOString(),
-      }
 
       return res.status(200).json({
         success: true,
         mpesaCode,
         mpesaReceipt,
-        receipt,
+        receipt: {
+          businessName,
+          orderNumber: order.orderNumber,
+          transactionCode: mpesaReceipt,
+          amount: Number(amount),
+          phoneNumber: maskedPhone,
+          items: order.orderItems.map(i => ({
+            name: i.product.name,
+            quantity: i.quantity,
+            price: i.unitPrice,
+            total: i.totalPrice,
+          })),
+          date: new Date().toISOString(),
+        },
         orderId: order.id,
-        message: 'M-Pesa STK push sent. Check your phone to enter PIN.',
+        simulated: true,
+        message: 'Demo mode: M-Pesa payment simulated.',
       })
     }
 
     res.setHeader('Allow', ['POST'])
-    res.status(405).end(`Method ${req.method} Not Allowed`)
+    return res.status(405).end(`Method ${req.method} Not Allowed`)
   } catch (error) {
     console.error('M-Pesa API error:', error)
     return res.status(500).json({ error: 'Internal server error' })

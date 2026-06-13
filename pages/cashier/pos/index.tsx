@@ -1,7 +1,7 @@
 import { GetServerSideProps } from 'next'
 import { getSession } from 'next-auth/react'
 import { prisma } from '@/lib/prisma'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import Head from 'next/head'
 import {
   ShoppingCart, Plus, Minus, Trash2, Search, Smartphone,
@@ -61,6 +61,9 @@ export default function POSPage({ products, categories, role }: Props) {
   const [processingMpesa, setProcessingMpesa] = useState(false)
   const [error, setError] = useState('')
   const [receipt, setReceipt] = useState<ReceiptData | null>(null)
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null)
+  const [pollError, setPollError] = useState('')
+  const pollingRef = useRef(false)
   const [copied, setCopied] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
 
@@ -76,6 +79,60 @@ export default function POSPage({ products, categories, role }: Props) {
       return () => clearTimeout(timer)
     }
   }, [receipt])
+
+  useEffect(() => {
+    if (!pendingOrderId) return
+
+    pollingRef.current = true
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/orders/${pendingOrderId}`)
+        if (!res.ok) return
+        const order = await res.json()
+        if (order.paymentStatus === 'COMPLETED') {
+          clearInterval(interval)
+          pollingRef.current = false
+          setProcessingMpesa(false)
+          setPendingOrderId(null)
+          setReceipt({
+            orderNumber: order.orderNumber,
+            totalAmount: Number(order.totalAmount),
+            paymentMethod: 'MPESA',
+            items: order.orderItems.map((i: { product: { name: string }; quantity: number; unitPrice: number; totalPrice: number }) => ({
+              name: i.product.name,
+              quantity: i.quantity,
+              unitPrice: i.unitPrice,
+              totalPrice: i.totalPrice,
+            })),
+            customerPhone: order.customerPhone || order.delivery?.customerPhone || '',
+            cashier: order.cashierName || '',
+            amountPaid: Number(order.totalAmount),
+            change: 0,
+            createdAt: order.createdAt,
+            transactionCode: order.mpesaReceipt,
+          })
+        }
+      } catch {
+        setPollError('Connection issue. Tap refresh to retry.')
+      }
+    }, 3000)
+
+    const timeout = setTimeout(() => {
+      if (pollingRef.current) {
+        clearInterval(interval)
+        pollingRef.current = false
+        setProcessingMpesa(false)
+        setPendingOrderId(null)
+        setPollError('Payment timed out. Please try again.')
+      }
+    }, 120000)
+
+    return () => {
+      clearInterval(interval)
+      clearTimeout(timeout)
+      pollingRef.current = false
+    }
+  }, [pendingOrderId])
 
   const filteredProducts = useMemo(() => {
     let filtered = products
@@ -180,6 +237,7 @@ export default function POSPage({ products, categories, role }: Props) {
       if (paymentMethod === 'MPESA') {
         setSubmitting(false)
         setProcessingMpesa(true)
+        setPollError('')
 
         const mpesaRes = await fetch('/api/payments/mpesa', {
           method: 'POST',
@@ -198,11 +256,15 @@ export default function POSPage({ products, categories, role }: Props) {
           return
         }
 
-        setProcessingMpesa(false)
-        setReceipt({
-          ...data,
-          transactionCode: mpesaData.mpesaReceipt,
-        })
+        if (mpesaData.checkoutRequestId) {
+          setPendingOrderId(data.id)
+        } else {
+          setProcessingMpesa(false)
+          setReceipt({
+            ...data,
+            transactionCode: mpesaData.mpesaReceipt,
+          })
+        }
       } else {
         setSubmitting(false)
         setReceipt({ ...data, transactionCode: undefined })
@@ -241,6 +303,9 @@ export default function POSPage({ products, categories, role }: Props) {
               <Loader2 className="h-5 w-5 animate-spin text-primary-500" />
               <p className="text-sm font-medium text-gray-900 dark:text-white">Waiting for customer to enter PIN...</p>
             </div>
+            {pollError && (
+              <p className="text-sm text-red-500 mb-3">{pollError}</p>
+            )}
             <div className="text-left space-y-2 text-sm text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
@@ -262,6 +327,17 @@ export default function POSPage({ products, categories, role }: Props) {
               </div>
             </div>
           </div>
+          {pollError && (
+            <button
+              onClick={() => {
+                setPollError('')
+                setPendingOrderId(pendingOrderId)
+              }}
+              className="w-full py-3 rounded-2xl text-sm font-semibold gradient-primary text-white shadow-lg shadow-orange-500/20 mb-3"
+            >
+              Retry
+            </button>
+          )}
           <div className="text-center">
             <p className="text-lg font-bold text-gray-900 dark:text-white">KES {cartTotal.toLocaleString()}</p>
             <p className="text-xs text-gray-400 mt-1">Amount to pay</p>

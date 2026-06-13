@@ -1,6 +1,6 @@
 import { GetServerSideProps } from 'next'
 import { getSession } from 'next-auth/react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
@@ -60,6 +60,9 @@ export default function Checkout() {
   const [orderNumber, setOrderNumber] = useState('')
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null)
   const [copied, setCopied] = useState(false)
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null)
+  const [pollError, setPollError] = useState('')
+  const pollingRef = useRef(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -147,6 +150,7 @@ export default function Checkout() {
       if (paymentMethod === 'MPESA') {
         setSubmitting(false)
         setProcessingMpesa(true)
+        setPollError('')
 
         const mpesaRes = await fetch('/api/payments/mpesa', {
           method: 'POST',
@@ -165,10 +169,14 @@ export default function Checkout() {
           return
         }
 
-        sessionStorage.removeItem('cart')
-        setReceiptData(mpesaData.receipt)
-        setProcessingMpesa(false)
-        setOrderPlaced(true)
+        if (mpesaData.checkoutRequestId) {
+          setPendingOrderId(orderData.id)
+        } else {
+          sessionStorage.removeItem('cart')
+          setReceiptData(mpesaData.receipt)
+          setProcessingMpesa(false)
+          setOrderPlaced(true)
+        }
       } else {
         sessionStorage.removeItem('cart')
         setSubmitting(false)
@@ -180,6 +188,59 @@ export default function Checkout() {
       setProcessingMpesa(false)
     }
   }
+
+  useEffect(() => {
+    if (!pendingOrderId) return
+
+    pollingRef.current = true
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/orders/${pendingOrderId}`)
+        if (!res.ok) return
+        const order = await res.json()
+        if (order.paymentStatus === 'COMPLETED' && order.mpesaReceipt) {
+          clearInterval(interval)
+          pollingRef.current = false
+          sessionStorage.removeItem('cart')
+          setReceiptData({
+            businessName: 'Danoscar Bite',
+            orderNumber: order.orderNumber,
+            transactionCode: order.mpesaReceipt,
+            amount: Number(order.totalAmount),
+            phoneNumber: (order.delivery?.customerPhone || '').replace(/(\d{3})(\d{3})(\d{4})/, '$1****$3'),
+            items: order.orderItems.map((i: { product: { name: string }; quantity: number; unitPrice: number }) => ({
+              name: i.product.name,
+              quantity: i.quantity,
+              price: i.unitPrice,
+              total: i.unitPrice * i.quantity,
+            })),
+            date: order.createdAt,
+          })
+          setProcessingMpesa(false)
+          setPendingOrderId(null)
+          setOrderPlaced(true)
+        }
+      } catch {
+        setPollError('Connection issue. Retrying...')
+      }
+    }, 3000)
+
+    const timeout = setTimeout(() => {
+      if (pollingRef.current) {
+        clearInterval(interval)
+        pollingRef.current = false
+        setProcessingMpesa(false)
+        setPendingOrderId(null)
+        setPollError('Payment timed out. Please try again.')
+      }
+    }, 120000)
+
+    return () => {
+      clearInterval(interval)
+      clearTimeout(timeout)
+      pollingRef.current = false
+    }
+  }, [pendingOrderId])
 
   if (loading) {
     return (
@@ -210,12 +271,26 @@ export default function Checkout() {
               <Loader2 className="h-5 w-5 animate-spin text-primary-500" />
               <p className="text-sm font-medium text-gray-900 dark:text-white">Waiting for confirmation...</p>
             </div>
+            {pollError && (
+              <p className="text-sm text-red-500 mb-2">{pollError}</p>
+            )}
             <p className="text-xs text-gray-400 dark:text-gray-500">
               1. Enter your M-Pesa PIN on your phone<br />
               2. Confirm the payment to <strong>Danoscar Bite</strong><br />
               3. Wait for confirmation
             </p>
           </div>
+          {pollError && (
+            <button
+              onClick={() => {
+                setPollError('')
+                setPendingOrderId(pendingOrderId)
+              }}
+              className="w-full py-3 rounded-2xl text-sm font-semibold gradient-primary text-white shadow-lg shadow-orange-500/20 mb-3"
+            >
+              Retry
+            </button>
+          )}
           <p className="text-xs text-gray-400 dark:text-gray-400">
             Amount: <strong className="text-gray-900 dark:text-white">KES {total.toFixed(2)}</strong>
           </p>

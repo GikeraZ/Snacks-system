@@ -1,6 +1,5 @@
 const CACHE = 'danoscar-bite-v1'
 const STATIC_ASSETS = [
-  '/',
   '/api/manifest',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
@@ -31,7 +30,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(request).then((cached) => {
       const fetchPromise = fetch(new Request(request, { redirect: 'follow' })).then((response) => {
-        if (response && response.status === 200) {
+        if (response.ok && response.url === request.url) {
           const clone = response.clone()
           caches.open(CACHE).then((cache) => cache.put(request, clone))
         }

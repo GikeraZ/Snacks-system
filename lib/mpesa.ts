@@ -95,11 +95,17 @@ export async function stkPush(
 
     return { success: false, error: res.data.ResponseDescription || 'STK push failed' }
   } catch (err: unknown) {
-    if (err && typeof err === 'object' && 'response' in err) {
-      const axiosErr = err as { response: { data: { errorMessage?: string } } }
-      return { success: false, error: axiosErr.response?.data?.errorMessage || 'M-Pesa API error' }
+    let message = 'M-Pesa connection failed'
+    if (err && typeof err === 'object') {
+      const axiosErr = err as { response?: { data?: Record<string, unknown>; status?: number }; message?: string }
+      if (axiosErr.response) {
+        message = JSON.stringify(axiosErr.response.data) || `HTTP ${axiosErr.response.status}`
+      } else if (axiosErr.message) {
+        message = axiosErr.message
+      }
     }
-    return { success: false, error: 'M-Pesa connection failed' }
+    console.error('stkPush error:', message, err)
+    return { success: false, error: message }
   }
 }
 
@@ -143,7 +149,8 @@ export async function queryStatus(checkoutRequestId: string): Promise<{
     }
 
     return { success: false, resultCode: res.data.ResultCode, resultDesc: res.data.ResultDesc }
-  } catch {
+  } catch (err) {
+    console.error('queryStatus error:', err)
     return { success: false }
   }
 }

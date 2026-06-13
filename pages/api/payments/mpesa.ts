@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { prisma } from '../../../lib/prisma'
+import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
 
@@ -51,18 +51,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
       })
 
+      // Update stock for POS orders where it wasn't decremented yet
+      if (order.notes?.includes('POS sale')) {
+        for (const item of order.orderItems) {
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: { stockQuantity: { decrement: item.quantity } },
+          })
+        }
+      }
+
       const pointsEarned = Math.floor(Number(amount))
       await prisma.user.update({
         where: { id: session.user.id },
         data: { loyaltyPoints: { increment: pointsEarned } },
       })
 
+      const businessName = (await prisma.receiptSetting.findFirst())?.businessName || 'Danoscar Bite'
+
+      const maskedPhone = phoneNumber.replace(/(\d{3})(\d{3})(\d{4})/, '$1****$3')
+
       const receipt = {
-        businessName: 'Danoscar Bite',
+        businessName,
         orderNumber: order.orderNumber,
         transactionCode: mpesaReceipt,
         amount: Number(amount),
-        phoneNumber: phoneNumber.replace(/(\d{3})(\d{3})(\d{4})/, '$1****$3'),
+        phoneNumber: maskedPhone,
         items: order.orderItems.map(i => ({
           name: i.product.name,
           quantity: i.quantity,
@@ -78,6 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         mpesaReceipt,
         receipt,
         orderId: order.id,
+        message: 'M-Pesa STK push sent. Check your phone to enter PIN.',
       })
     }
 

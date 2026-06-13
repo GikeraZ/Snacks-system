@@ -6,9 +6,9 @@ const PASSKEY = process.env.MPESA_PASSKEY || ''
 const SHORTCODE = process.env.MPESA_SHORTCODE || ''
 const CALLBACK_URL = process.env.MPESA_CALLBACK_URL || ''
 
-const BASE_URL = CONSUMER_KEY
-  ? 'https://api.safaricom.co.ke'
-  : 'https://sandbox.safaricom.co.ke'
+const BASE_URL = SHORTCODE === '174379'
+  ? 'https://sandbox.safaricom.co.ke'
+  : 'https://api.safaricom.co.ke'
 
 let tokenCache: { token: string; expiry: number } | null = null
 

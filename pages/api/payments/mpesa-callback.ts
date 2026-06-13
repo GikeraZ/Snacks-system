@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '@/lib/prisma'
-import { queryStatus, isConfigured } from '@/lib/mpesa'
+import { queryStatus } from '@/lib/mpesa'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -68,7 +68,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const mpesaReceipt = getItem('MpesaReceiptNumber') as string | undefined
     const amount = getItem('Amount') as number | undefined
-    const phone = getItem('PhoneNumber') as string | undefined
 
     if (!mpesaReceipt) {
       return res.status(200).json({ ResultCode: 0, ResultDesc: 'No receipt' })
@@ -91,7 +90,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: {
         paymentStatus: 'COMPLETED',
         mpesaReceipt,
-        ...(phone ? { delivery: { update: { customerPhone: phone } } } : {}),
       },
     })
 

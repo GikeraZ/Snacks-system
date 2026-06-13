@@ -30,7 +30,7 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(
     caches.match(request).then((cached) => {
-      const fetchPromise = fetch(request).then((response) => {
+      const fetchPromise = fetch(new Request(request, { redirect: 'follow' })).then((response) => {
         if (response && response.status === 200) {
           const clone = response.clone()
           caches.open(CACHE).then((cache) => cache.put(request, clone))

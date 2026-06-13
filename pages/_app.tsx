@@ -27,6 +27,15 @@ function FaviconLoader() {
   return null
 }
 
+function PWARegister() {
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+    }
+  }, [])
+  return null
+}
+
 export default function App({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   const router = useRouter()
 
@@ -34,6 +43,7 @@ export default function App({ Component, pageProps: { session, ...pageProps } }:
     <SessionProvider session={session}>
       <ThemeProvider>
         <FaviconLoader />
+        <PWARegister />
         <Layout>
           <AnimatePresence mode="wait">
             <motion.div

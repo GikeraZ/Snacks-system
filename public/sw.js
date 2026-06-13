@@ -25,6 +25,7 @@ self.addEventListener('fetch', (event) => {
   const { request } = event
 
   if (request.method !== 'GET') return
+  if (request.url.includes('/api/')) return
 
   event.respondWith(
     caches.match(request).then((cached) => {
@@ -34,7 +35,9 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE).then((cache) => cache.put(request, clone))
         }
         return response
-      }).catch(() => cached)
+      }).catch(() => {
+        return cached || new Response('Offline', { status: 503 })
+      })
 
       return cached || fetchPromise
     })

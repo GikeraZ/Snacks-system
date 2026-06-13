@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const publicPaths = ['/auth/login', '/auth/register', '/auth/unauthorized', '/api/auth', '/api/manifest', '/api/logo', '/api/images']
 
-export async function proxy(req: NextRequest) {
+export default async function handler(req: NextRequest) {
   const { pathname } = req.nextUrl
 
   const isPublic = publicPaths.some(p => pathname.startsWith(p))
@@ -21,34 +21,24 @@ export async function proxy(req: NextRequest) {
 
   const role = token.role as string
 
-  if (pathname.startsWith('/admin')) {
-    if (role !== 'SUPER_ADMIN' && role !== 'BUSINESS_PARTNER') {
-      return NextResponse.rewrite(new URL('/auth/unauthorized', req.url))
-    }
+  if (pathname.startsWith('/admin') && role !== 'SUPER_ADMIN' && role !== 'BUSINESS_PARTNER') {
+    return NextResponse.rewrite(new URL('/auth/unauthorized', req.url))
   }
 
-  if (pathname.startsWith('/cashier')) {
-    if (role !== 'SUPER_ADMIN' && role !== 'CASHIER') {
-      return NextResponse.rewrite(new URL('/auth/unauthorized', req.url))
-    }
+  if (pathname.startsWith('/cashier') && role !== 'SUPER_ADMIN' && role !== 'CASHIER') {
+    return NextResponse.rewrite(new URL('/auth/unauthorized', req.url))
   }
 
-  if (pathname.startsWith('/kitchen')) {
-    if (role !== 'SUPER_ADMIN' && role !== 'KITCHEN_STAFF') {
-      return NextResponse.rewrite(new URL('/auth/unauthorized', req.url))
-    }
+  if (pathname.startsWith('/kitchen') && role !== 'SUPER_ADMIN' && role !== 'KITCHEN_STAFF') {
+    return NextResponse.rewrite(new URL('/auth/unauthorized', req.url))
   }
 
-  if (pathname.startsWith('/delivery')) {
-    if (role !== 'SUPER_ADMIN' && role !== 'DELIVERY') {
-      return NextResponse.rewrite(new URL('/auth/unauthorized', req.url))
-    }
+  if (pathname.startsWith('/delivery') && role !== 'SUPER_ADMIN' && role !== 'DELIVERY') {
+    return NextResponse.rewrite(new URL('/auth/unauthorized', req.url))
   }
 
-  if (pathname.startsWith('/customer')) {
-    if (role !== 'CUSTOMER' && role !== 'SUPER_ADMIN') {
-      return NextResponse.rewrite(new URL('/auth/unauthorized', req.url))
-    }
+  if (pathname.startsWith('/customer') && role !== 'CUSTOMER' && role !== 'SUPER_ADMIN') {
+    return NextResponse.rewrite(new URL('/auth/unauthorized', req.url))
   }
 
   return NextResponse.next()

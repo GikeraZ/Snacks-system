@@ -57,12 +57,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         : []
 
       const itemsByOrder = new Map(items.map(i => [i.orderId, i._sum.quantity || 0]))
+      const orderDates = new Map(orders.map(o => [o.id, o.createdAt.toISOString().slice(0, 10)]))
+      const itemsByDate = new Map<string, number>()
+      for (const [orderId, qty] of itemsByOrder) {
+        const date = orderDates.get(orderId)
+        if (date) itemsByDate.set(date, (itemsByDate.get(date) || 0) + qty)
+      }
 
       results.sales = {
         total: orders.reduce((s, o) => s + Number(o.totalAmount), 0),
         count: orders.length,
         average: orders.length > 0 ? orders.reduce((s, o) => s + Number(o.totalAmount), 0) / orders.length : 0,
-        daily: daily.map(d => ({ ...d, items: itemsByOrder.size > 0 ? itemsByOrder.values().next().value : 0 })),
+        daily: daily.map(d => ({ ...d, items: itemsByDate.get(d.date) || 0 })),
       }
     }
 

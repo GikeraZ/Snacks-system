@@ -1,13 +1,24 @@
 import { GetServerSideProps } from 'next'
 import { getSession } from 'next-auth/react'
 import { prisma } from '../../lib/prisma'
-import { BarChart3, ShoppingBag, Truck, Package, DollarSign, Coffee, TrendingUp, TrendingDown } from 'lucide-react'
+import { BarChart3, ShoppingBag, Truck, Package, DollarSign, Coffee, TrendingUp, TrendingDown, Users, Calendar, Phone, Mail, ChevronRight } from 'lucide-react'
+import Link from 'next/link'
 import Head from 'next/head'
 
 import { useEffect, useRef, useState } from 'react'
 import { Chart, registerables } from 'chart.js'
 
 Chart.register(...registerables)
+
+interface CustomerInfo {
+  id: string
+  name: string | null
+  phone: string | null
+  email: string | null
+  createdAt: string
+  totalOrders: number
+  totalSpent: number
+}
 
 interface DashboardProps {
   stats: {
@@ -22,10 +33,11 @@ interface DashboardProps {
     topProducts: { name: string; quantity: number; revenue: number }[]
     expensesByCategory: { category: string; amount: number }[]
   }
+  recentCustomers: CustomerInfo[]
   role: string
 }
 
-export default function AdminDashboard({ stats, role }: DashboardProps) {
+export default function AdminDashboard({ stats, recentCustomers, role }: DashboardProps) {
   const salesChartRef = useRef<HTMLCanvasElement>(null)
   const productsChartRef = useRef<HTMLCanvasElement>(null)
   const expenseChartRef = useRef<HTMLCanvasElement>(null)
@@ -218,6 +230,54 @@ export default function AdminDashboard({ stats, role }: DashboardProps) {
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold dark:text-white">Registered Customers ({recentCustomers.length})</h2>
+              <Link href="/admin/customers" className="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1">
+                View All <ChevronRight className="h-4 w-4" />
+              </Link>
+            </div>
+            {recentCustomers.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                      <th className="pb-3 font-medium">Name</th>
+                      <th className="pb-3 font-medium">Phone</th>
+                      <th className="pb-3 font-medium hidden md:table-cell">Email</th>
+                      <th className="pb-3 font-medium hidden sm:table-cell">Orders</th>
+                      <th className="pb-3 font-medium hidden sm:table-cell">Total Spent</th>
+                      <th className="pb-3 font-medium hidden lg:table-cell">Joined</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentCustomers.map((c) => (
+                      <tr key={c.id} className="border-b border-gray-50 dark:border-gray-700/50 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td className="py-3 pr-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
+                              <Users className="h-4 w-4 text-primary-600 dark:text-primary-400" />
+                            </div>
+                            <span className="font-medium text-gray-900 dark:text-white">{c.name || 'Unnamed'}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 pr-4 text-gray-600 dark:text-gray-300">{c.phone || '-'}</td>
+                        <td className="py-3 pr-4 text-gray-500 dark:text-gray-400 hidden md:table-cell">{c.email || '-'}</td>
+                        <td className="py-3 pr-4 text-gray-600 dark:text-gray-300 hidden sm:table-cell">{c.totalOrders}</td>
+                        <td className="py-3 pr-4 text-gray-600 dark:text-gray-300 hidden sm:table-cell">KES {c.totalSpent.toLocaleString()}</td>
+                        <td className="py-3 text-gray-500 dark:text-gray-400 hidden lg:table-cell">
+                          {new Date(c.createdAt).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-gray-400 dark:text-gray-500 text-center py-8">No registered customers yet</p>
+            )}
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm">
             <h2 className="text-lg font-semibold dark:text-white mb-4">Quick Actions</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
@@ -303,6 +363,28 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     expenseCategoryMap.set(exp.category, (expenseCategoryMap.get(exp.category) || 0) + Number(exp.amount))
   }
 
+  // Registered customers
+  const customers = await prisma.user.findMany({
+    where: { role: 'CUSTOMER' },
+    orderBy: { createdAt: 'desc' },
+    take: 10,
+    include: {
+      orders: {
+        select: { totalAmount: true },
+      },
+    },
+  })
+
+  const recentCustomers = customers.map((u) => ({
+    id: u.id,
+    name: u.name,
+    phone: u.phone,
+    email: u.email,
+    createdAt: u.createdAt.toISOString(),
+    totalOrders: u.orders.length,
+    totalSpent: u.orders.reduce((sum, o) => sum + Number(o.totalAmount), 0),
+  }))
+
   return {
     props: {
       stats: {
@@ -317,6 +399,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         topProducts,
         expensesByCategory: Array.from(expenseCategoryMap.entries()).map(([category, amount]) => ({ category, amount })),
       },
+      recentCustomers,
       role: session.user.role,
     },
   }

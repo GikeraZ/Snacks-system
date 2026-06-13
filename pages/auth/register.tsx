@@ -54,7 +54,7 @@ export default function Register() {
                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
                 <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
                   className="w-full pl-11 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50/50 dark:bg-gray-800/50 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-gray-900 dark:text-white"
-                  placeholder="John Doe" required />
+                  placeholder="Enter your full name" required />
               </div>
             </div>
             <div>
@@ -72,7 +72,7 @@ export default function Register() {
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
                 <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
                   className="w-full pl-11 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50/50 dark:bg-gray-800/50 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-gray-900 dark:text-white"
-                  placeholder="john@example.com" />
+                  placeholder="your@email.com" />
               </div>
             </div>
             <div>

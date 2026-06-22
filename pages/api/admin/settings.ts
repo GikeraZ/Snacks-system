@@ -2,7 +2,13 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '../../../lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
-import { sanitize, sanitizeObject, auditLog } from '@/lib/security'
+import { sanitize, auditLog } from '@/lib/security'
+
+export const config = {
+  api: {
+    bodyParser: { sizeLimit: '5mb' },
+  },
+}
 
 const ALLOWED_SETTING_KEYS = [
   'businessName', 'businessAddress', 'businessPhone', 'businessEmail',
@@ -29,14 +35,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { receipt, settings } = req.body
 
       if (receipt) {
-        const sanitizedReceipt = sanitizeObject(receipt as Record<string, unknown>)
+        const IMAGE_FIELDS = ['logoUrl', 'faviconUrl', 'receiptLogoUrl']
         const allowedReceiptFields = [
           'businessName', 'logoUrl', 'faviconUrl', 'receiptLogoUrl',
           'address', 'phone', 'email', 'website', 'footerText',
         ]
         const filteredReceipt: Record<string, unknown> = {}
         for (const key of allowedReceiptFields) {
-          if (sanitizedReceipt[key] !== undefined) filteredReceipt[key] = sanitizedReceipt[key]
+          if ((receipt as Record<string, unknown>)[key] === undefined) continue
+          if (IMAGE_FIELDS.includes(key)) {
+            filteredReceipt[key] = (receipt as Record<string, unknown>)[key]
+          } else {
+            const val = (receipt as Record<string, unknown>)[key]
+            filteredReceipt[key] = typeof val === 'string' ? sanitize(val) : val
+          }
         }
 
         if (filteredReceipt.businessName && (filteredReceipt.businessName as string).trim().length < 2) {

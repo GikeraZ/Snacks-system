@@ -98,8 +98,9 @@ export default function SettingsPage({ role }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
+      const data = await res.json()
       if (res.ok) setMessage('Settings saved successfully!')
-      else setMessage('Failed to save settings')
+      else setMessage(data.error || 'Failed to save settings')
     } catch { setMessage('Network error') }
     setSaving(false)
   }

@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
 
+const ALLOWED_ROLES = ['SUPER_ADMIN', 'BUSINESS_PARTNER', 'CASHIER']
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions)
   if (!session) {
@@ -28,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'Order not found' })
     }
 
-    if (order.customerId !== session.user.id && session.user.role !== 'ADMIN' && session.user.role !== 'CASHIER') {
+    if (order.customerId !== session.user.id && !ALLOWED_ROLES.includes(session.user.role as string)) {
       return res.status(403).json({ error: 'Forbidden' })
     }
 

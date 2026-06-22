@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
 import bcrypt from 'bcryptjs'
+import { sanitize, validatePhone, checkRateLimit, getRateLimitKey, auditLog } from '@/lib/security'
+
+const VALID_ROLES = ['SUPER_ADMIN', 'CASHIER', 'KITCHEN_STAFF', 'DELIVERY', 'BUSINESS_PARTNER']
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -29,19 +32,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (req.method === 'POST') {
+      if (!checkRateLimit(`employee-create:${getRateLimitKey(req)}`, 10, 60000)) {
+        return res.status(429).json({ error: 'Too many requests. Try again later.' })
+      }
+
       const { name, email, phone, password, role } = req.body
       if (!name || !phone || !password || !role) {
         return res.status(400).json({ error: 'Name, phone, password, and role are required' })
       }
-      if (phone.length < 10) {
-        return res.status(400).json({ error: 'Phone must be at least 10 characters' })
+      if (!validatePhone(phone)) {
+        return res.status(400).json({ error: 'Invalid phone number' })
       }
-      if (password.length < 6) {
-        return res.status(400).json({ error: 'Password must be at least 6 characters' })
+      if (password.length < 8) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters' })
       }
-      const validRoles = ['SUPER_ADMIN', 'CASHIER', 'KITCHEN_STAFF', 'DELIVERY', 'BUSINESS_PARTNER']
-      if (!validRoles.includes(role)) {
-        return res.status(400).json({ error: 'Invalid role' })
+      if (!VALID_ROLES.includes(role)) {
+        return res.status(400).json({ error: `Invalid role. Must be one of: ${VALID_ROLES.join(', ')}` })
       }
 
       const existing = await prisma.user.findUnique({ where: { phone } })
@@ -49,10 +55,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(409).json({ error: 'Phone number already registered' })
       }
 
-      const hashedPassword = await bcrypt.hash(password, 10)
+      if (email) {
+        const existingEmail = await prisma.user.findUnique({ where: { email } })
+        if (existingEmail) {
+          return res.status(409).json({ error: 'Email already registered' })
+        }
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 12)
       const user = await prisma.user.create({
         data: {
-          name,
+          name: sanitize(name),
           email: email || undefined,
           phone,
           password: hashedPassword,
@@ -61,6 +74,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
         select: { id: true, name: true, email: true, phone: true, role: true, isActive: true },
       })
+
+      await auditLog({
+        userId: session.user.id,
+        action: 'EMPLOYEE_CREATED',
+        description: `Employee created: ${name}, role: ${role}`,
+        req,
+      })
+
       return res.status(201).json(user)
     }
 
@@ -69,22 +90,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!id) return res.status(400).json({ error: 'ID is required' })
 
       const data: Record<string, unknown> = {}
-      if (name) data.name = name
-      if (email !== undefined) data.email = email
+      if (name) data.name = sanitize(name)
+      if (email !== undefined) data.email = email || null
       if (phone) data.phone = phone
       if (role) {
-        const validRoles = ['SUPER_ADMIN', 'CASHIER', 'KITCHEN_STAFF', 'DELIVERY', 'BUSINESS_PARTNER']
-        if (!validRoles.includes(role)) return res.status(400).json({ error: 'Invalid role' })
+        if (!VALID_ROLES.includes(role)) return res.status(400).json({ error: 'Invalid role' })
         data.role = role
       }
       if (isActive !== undefined) data.isActive = isActive
-      if (password) data.password = await bcrypt.hash(password, 10)
+      if (password) {
+        if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' })
+        data.password = await bcrypt.hash(password, 12)
+      }
 
       const user = await prisma.user.update({
         where: { id },
         data,
         select: { id: true, name: true, email: true, phone: true, role: true, isActive: true },
       })
+
+      await auditLog({
+        userId: session.user.id,
+        action: 'EMPLOYEE_UPDATED',
+        description: `Employee ${id} updated`,
+        req,
+      })
+
       return res.status(200).json(user)
     }
 
@@ -94,6 +125,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (id === session.user.id) return res.status(400).json({ error: 'Cannot delete yourself' })
 
       await prisma.user.update({ where: { id }, data: { isActive: false } })
+
+      await auditLog({
+        userId: session.user.id,
+        action: 'EMPLOYEE_DEACTIVATED',
+        description: `Employee ${id} deactivated`,
+        req,
+      })
+
       return res.status(200).json({ message: 'User deactivated' })
     }
 

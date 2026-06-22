@@ -4,6 +4,7 @@ node_modules
 .env.development.local
 .env.test.local
 .env.production.local
+.env*.local
 .next
 out
 dist
@@ -12,7 +13,7 @@ next-env.d.ts
 /generated/prisma
 *.db
 *.db-journal
-# prisma/migrations should be tracked — remove from here
-
 .vercel
-.env*.local
+*.log
+.DS_Store
+Thumbs.db

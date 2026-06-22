@@ -4,8 +4,7 @@ import bcrypt from 'bcryptjs'
 const prisma = new PrismaClient()
 
 async function main() {
-  // Create default admin user
-  const adminPassword = await bcrypt.hash('admin123', 10)
+  const adminPassword = await bcrypt.hash('admin123', 12)
   await prisma.user.upsert({
     where: { phone: '0700000000' },
     update: {},
@@ -19,7 +18,6 @@ async function main() {
     },
   })
 
-  // Create categories
   const categoryNames = [
     'Burgers', 'Chips', 'Smokies', 'Sausages', 'Samosas',
     'Chapati', 'Mandazi', 'Tea', 'Coffee', 'Juice',
@@ -37,7 +35,6 @@ async function main() {
     })
   }
 
-  // Create default products
   const products = [
     { name: 'Beef Burger', categorySlug: 'burgers', sellingPrice: 150, costPrice: 100, stockQuantity: 50 },
     { name: 'Chicken Burger', categorySlug: 'burgers', sellingPrice: 180, costPrice: 120, stockQuantity: 30 },
@@ -73,7 +70,6 @@ async function main() {
     }
   }
 
-  // Create loyalty rules
   const rules = [
     { pointsPerKES: 1, rewardType: 'FREE_SODA', requiredPoints: 50 },
     { pointsPerKES: 1, rewardType: 'FREE_CHIPS', requiredPoints: 100 },

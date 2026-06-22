@@ -2,6 +2,7 @@ import NextAuth, { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
+import { checkRateLimit } from '@/lib/security'
 
 declare module 'next-auth' {
   interface Session {
@@ -13,6 +14,14 @@ declare module 'next-auth' {
       role?: string
       image?: string | null
     }
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    role?: string
+    phone?: string
+    isActive?: boolean
   }
 }
 
@@ -37,6 +46,10 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
+        if (!user.isActive) {
+          throw new Error('ACCOUNT_DISABLED')
+        }
+
         const isCorrectPassword = await bcrypt.compare(
           credentials.password,
           user.password
@@ -52,6 +65,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           phone: user.phone,
           role: user.role,
+          isActive: user.isActive,
         }
       }
     })
@@ -61,6 +75,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = (user as any).role
         token.phone = (user as any).phone
+        token.isActive = (user as any).isActive
       }
       return token
     },
@@ -76,12 +91,17 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: '/auth/login',
     signOut: '/auth/logout',
+    error: '/auth/login',
   },
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60,
+    updateAge: 24 * 60 * 60,
   },
   secret: process.env.NEXTAUTH_SECRET,
+  jwt: {
+    maxAge: 30 * 24 * 60 * 60,
+  },
 }
 
 export default NextAuth(authOptions)

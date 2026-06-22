@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
+import { generateSecureToken, validatePhone, sanitize, auditLog } from '@/lib/security'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -22,10 +23,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: 'Customer phone number is required' })
       }
 
+      if (customerPhone !== 'walk-in' && !validatePhone(customerPhone)) {
+        return res.status(400).json({ error: 'Invalid customer phone number' })
+      }
+
       let totalAmount = 0
       const orderItemsData: Array<{ productId: string; quantity: number; unitPrice: number; totalPrice: number }> = []
 
       for (const item of items) {
+        if (item.quantity < 1) {
+          return res.status(400).json({ error: 'Invalid quantity' })
+        }
         const product = await prisma.product.findUnique({ where: { id: item.productId } })
         if (!product) {
           return res.status(400).json({ error: `Product ${item.productId} not found` })
@@ -46,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         })
       }
 
-      const orderNumber = `POS-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
+      const orderNumber = `POS-${generateSecureToken(8).toUpperCase()}`
 
       const order = await prisma.order.create({
         data: {
@@ -63,7 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               locationType: 'POS',
               locationDetails: 'Counter sale',
               customerName: 'Walk-in Customer',
-              customerPhone,
+              customerPhone: sanitize(customerPhone),
             },
           },
         },
@@ -80,6 +88,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           })
         }
       }
+
+      await auditLog({
+        userId: session.user.id,
+        action: 'POS_SALE',
+        description: `POS sale ${orderNumber}, amount: ${totalAmount}`,
+        req,
+      })
 
       return res.status(201).json({
         id: order.id,

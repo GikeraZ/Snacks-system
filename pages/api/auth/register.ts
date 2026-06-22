@@ -1,11 +1,16 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '../../../lib/prisma'
 import bcrypt from 'bcryptjs'
+import { sanitize, validatePhone, checkRateLimit, getRateLimitKey, auditLog, generateSecureToken } from '@/lib/security'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST'])
     return res.status(405).end(`Method ${req.method} Not Allowed`)
+  }
+
+  if (!checkRateLimit(`register:${getRateLimitKey(req)}`, 5, 60000)) {
+    return res.status(429).json({ error: 'Too many registration attempts. Try again later.' })
   }
 
   try {
@@ -15,12 +20,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Name, phone, and password are required' })
     }
 
-    if (phone.length < 10) {
+    if (!validatePhone(phone)) {
       return res.status(400).json({ error: 'Invalid phone number' })
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' })
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' })
+    }
+
+    if (name.length < 2 || name.length > 100) {
+      return res.status(400).json({ error: 'Name must be between 2 and 100 characters' })
+    }
+
+    if (email && email.length > 254) {
+      return res.status(400).json({ error: 'Email is too long' })
     }
 
     const existing = await prisma.user.findUnique({ where: { phone } })
@@ -28,12 +41,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(409).json({ error: 'Phone number already registered' })
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10)
-    const referralCode = `REF${Date.now().toString(36).toUpperCase()}`
+    if (email) {
+      const existingEmail = await prisma.user.findUnique({ where: { email } })
+      if (existingEmail) {
+        return res.status(409).json({ error: 'Email already registered' })
+      }
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12)
+    const referralCode = `REF${generateSecureToken(8).toUpperCase()}`
 
     const user = await prisma.user.create({
       data: {
-        name,
+        name: sanitize(name),
         phone,
         email: email || null,
         password: hashedPassword,
@@ -49,6 +69,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         totalSpent: 0,
         referralPoints: 0,
       },
+    })
+
+    await auditLog({
+      action: 'USER_REGISTERED',
+      description: `New user registered: ${phone}`,
+      req,
     })
 
     return res.status(201).json({ message: 'User created successfully', userId: user.id })

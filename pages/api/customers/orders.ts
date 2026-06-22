@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
+import { generateOrderNumber, sanitize, validatePhone, auditLog } from '@/lib/security'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -22,6 +23,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (!items?.length || !deliveryLocation?.details || !phone) {
         return res.status(400).json({ error: 'Missing required fields' })
+      }
+
+      if (!validatePhone(phone)) {
+        return res.status(400).json({ error: 'Invalid phone number' })
       }
 
       let totalAmount = 0
@@ -54,7 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const deliveryFee = 0
       totalAmount += deliveryFee
 
-      const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
+      const orderNumber = generateOrderNumber()
 
       const order = await prisma.order.create({
         data: {
@@ -64,12 +69,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           paymentStatus: paymentMethod === 'MPESA' ? 'PENDING' : 'COMPLETED',
           totalAmount,
           deliveryFee,
-          notes: deliveryNotes,
+          notes: deliveryNotes ? sanitize(deliveryNotes) : undefined,
           orderItems: { create: orderItemsData },
           delivery: {
             create: {
               locationType: deliveryLocation.type,
-              locationDetails: deliveryLocation.details,
+              locationDetails: sanitize(deliveryLocation.details),
               customerName: session.user?.name || 'Customer',
               customerPhone: phone,
             },
@@ -99,6 +104,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           message: `Your order ${orderNumber} has been placed successfully.`,
           link: '/customer/orders',
         },
+      })
+
+      await auditLog({
+        userId: session.user.id,
+        action: 'ORDER_PLACED',
+        description: `Customer order ${orderNumber} placed, amount: ${totalAmount}`,
+        req,
       })
 
       return res.status(201).json({

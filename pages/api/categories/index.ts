@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
+import { sanitize, auditLog } from '@/lib/security'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -19,17 +20,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (req.method === 'POST') {
-      const { name, description } = req.body
-      if (!name) {
-        return res.status(400).json({ error: 'Name is required' })
+      if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'BUSINESS_PARTNER') {
+        return res.status(403).json({ error: 'Forbidden: insufficient permissions' })
       }
+      const { name, description } = req.body
+      if (!name || name.trim().length < 2) {
+        return res.status(400).json({ error: 'Name is required (min 2 characters)' })
+      }
+      if (name.length > 100) {
+        return res.status(400).json({ error: 'Name is too long' })
+      }
+
+      const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+      const existing = await prisma.category.findUnique({ where: { slug } })
+      if (existing) {
+        return res.status(409).json({ error: 'Category with this name already exists' })
+      }
+
       const category = await prisma.category.create({
         data: {
-          name,
-          slug: name.toLowerCase().replace(/\s+/g, '-'),
-          description,
+          name: sanitize(name),
+          slug,
+          description: description ? sanitize(description) : undefined,
         },
       })
+
+      await auditLog({
+        userId: session.user.id,
+        action: 'CATEGORY_CREATED',
+        description: `Category created: ${name}`,
+        req,
+      })
+
       return res.status(201).json(category)
     }
 

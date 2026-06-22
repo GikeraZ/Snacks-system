@@ -2,16 +2,25 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '../../../lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
+import { requireAuth } from '@/lib/security'
+
+const ALLOWED_REPORT_TYPES = ['sales', 'expenses', 'products']
+const ALLOWED_PERIODS = ['today', 'week', 'month', 'year']
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const session = await getServerSession(req, res, authOptions)
-
-    if (!session) {
-      return res.status(401).json({ error: 'Unauthorized' })
-    }
+    const session = await requireAuth(req, res, ['SUPER_ADMIN', 'BUSINESS_PARTNER'])
+    if (!session) return
 
     const { period = 'today', type = 'sales' } = req.query
+
+    if (typeof period !== 'string' || !ALLOWED_PERIODS.includes(period)) {
+      return res.status(400).json({ error: `Invalid period. Must be one of: ${ALLOWED_PERIODS.join(', ')}` })
+    }
+
+    if (typeof type !== 'string' || !ALLOWED_REPORT_TYPES.includes(type)) {
+      return res.status(400).json({ error: `Invalid type. Must be one of: ${ALLOWED_REPORT_TYPES.join(', ')}` })
+    }
 
     if (req.method === 'GET') {
       const now = new Date()
@@ -24,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       } else if (period === 'month') {
         startDate = new Date(now.setMonth(now.getMonth() - 1))
       } else {
-        startDate = new Date(new Date().setHours(0, 0, 0, 0))
+        startDate = new Date(now.setFullYear(now.getFullYear() - 1))
       }
 
       if (type === 'sales') {
@@ -82,8 +91,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           data: products,
         })
       }
-
-      return res.status(400).json({ error: 'Invalid report type' })
     }
 
     res.setHeader('Allow', ['GET'])

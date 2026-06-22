@@ -45,7 +45,7 @@ export default function Login() {
             <div className="inline-flex p-3 bg-primary-50 rounded-2xl mb-4">
               <Coffee className="h-10 w-10 text-primary-600 dark:text-primary-400" />
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Danoscar Bite</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Hot Take</h1>
             <p className="text-gray-500 dark:text-gray-400 mt-1">Sign in to manage your business</p>
           </div>
 

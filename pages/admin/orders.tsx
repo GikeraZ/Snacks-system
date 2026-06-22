@@ -97,7 +97,7 @@ export default function OrdersPage({ orders, role }: OrdersPageProps) {
 
   return (
     <>
-      <Head><title>Orders - Danoscar Bite</title></Head>
+      <Head><title>Orders - Hot Take</title></Head>
 
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">

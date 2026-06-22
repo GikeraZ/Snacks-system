@@ -87,8 +87,8 @@ export default function Sidebar({ role }: SidebarProps) {
             </div>
             {!collapsed && (
               <div className="min-w-0">
-                <h1 className="text-sm font-bold text-white font-heading truncate">Prince Snack</h1>
-                <p className="text-[10px] text-gray-400 font-medium tracking-wide">Management System</p>
+                <h1 className="text-sm font-bold text-white font-heading truncate">Hot Take</h1>
+                <p className="text-[10px] text-gray-400 font-medium tracking-wide">Campus Delivery</p>
               </div>
             )}
           </div>

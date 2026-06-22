@@ -42,7 +42,7 @@ export default function KitchenReady({ orders: initialOrders, role }: Props) {
 
   return (
     <>
-      <Head><title>Ready Orders - Danoscar Bite</title></Head>
+      <Head><title>Ready Orders - Hot Take</title></Head>
       <div className="p-4 md:p-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold dark:text-white">Ready for Pickup</h1>

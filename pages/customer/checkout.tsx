@@ -66,6 +66,11 @@ export default function Checkout() {
   const pollingRef = useRef(false)
   const router = useRouter()
 
+  const clearCart = () => {
+    sessionStorage.removeItem('cart')
+    try { localStorage.removeItem('cart'); window.dispatchEvent(new Event('cart-updated')) } catch {}
+  }
+
   useEffect(() => {
     const stored = sessionStorage.getItem('cart')
     const storedPhone = sessionStorage.getItem('phone')
@@ -173,13 +178,13 @@ export default function Checkout() {
         if (mpesaData.checkoutRequestId) {
           setPendingOrderId(orderData.id)
         } else {
-          sessionStorage.removeItem('cart')
+          clearCart()
           setReceiptData(mpesaData.receipt)
           setProcessingMpesa(false)
           setOrderPlaced(true)
         }
       } else {
-        sessionStorage.removeItem('cart')
+        clearCart()
         setSubmitting(false)
         setOrderPlaced(true)
       }
@@ -202,9 +207,9 @@ export default function Checkout() {
         if (order.paymentStatus === 'COMPLETED' && order.mpesaReceipt) {
           clearInterval(interval)
           pollingRef.current = false
-          sessionStorage.removeItem('cart')
+          clearCart()
           setReceiptData({
-            businessName: 'Danoscar Bite',
+            businessName: 'Hot Take',
             orderNumber: order.orderNumber,
             transactionCode: order.mpesaReceipt,
             amount: Number(order.totalAmount),
@@ -251,7 +256,7 @@ export default function Checkout() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Head><title>Checkout - Danoscar Bite</title></Head>
+        <Head><title>Checkout - Hot Take</title></Head>
         <div className="glass-card !p-8 flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
           <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Loading checkout...</p>
@@ -263,7 +268,7 @@ export default function Checkout() {
   if (processingMpesa) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <Head><title>Processing Payment - Danoscar Bite</title></Head>
+        <Head><title>Processing Payment - Hot Take</title></Head>
         <div className="glass-card !p-8 max-w-md w-full text-center animate-scale-in">
           <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-primary-500/20">
             <Smartphone className="h-10 w-10 text-white" />
@@ -282,7 +287,7 @@ export default function Checkout() {
             )}
             <p className="text-xs text-gray-400 dark:text-gray-500">
               1. Enter your M-Pesa PIN on your phone<br />
-              2. Confirm the payment to <strong>Danoscar Bite</strong><br />
+              2. Confirm the payment to <strong>Hot Take</strong><br />
               3. Wait for confirmation
             </p>
           </div>
@@ -306,7 +311,7 @@ export default function Checkout() {
     if (receiptData) {
       return (
         <div className="min-h-screen flex items-center justify-center p-4">
-          <Head><title>Receipt - Danoscar Bite</title></Head>
+          <Head><title>Receipt - Hot Take</title></Head>
           <div className="glass-card !p-6 max-w-md w-full animate-scale-in">
             <div className="text-center mb-6">
               <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-success-400 to-success-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-success-500/20">
@@ -390,7 +395,7 @@ export default function Checkout() {
 
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <Head><title>Order Placed - Danoscar Bite</title></Head>
+        <Head><title>Order Placed - Hot Take</title></Head>
         <div className="glass-card !p-8 max-w-md w-full text-center animate-scale-in">
           <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-success-400 to-success-600 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-success-500/20">
             <CheckCircle className="h-10 w-10 text-white" />
@@ -417,7 +422,7 @@ export default function Checkout() {
   return (
     <div className="min-h-screen pt-16 lg:pt-0">
       <Head>
-        <title>Checkout - Danoscar Bite</title>
+        <title>Checkout - Hot Take</title>
       </Head>
 
       <header className="sticky top-16 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50">

@@ -9,7 +9,7 @@ export default function ErrorPage({ statusCode }: ErrorPageProps) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
       <Head>
-        <title>Error - Danoscar Bite</title>
+        <title>Error - Hot Take</title>
       </Head>
       <div className="text-center max-w-md">
         <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">

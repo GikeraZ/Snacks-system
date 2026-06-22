@@ -48,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           await prisma.receiptSetting.update({ where: { id: existing.id }, data: filteredReceipt })
         } else {
           await prisma.receiptSetting.create({
-            data: { businessName: 'Danoscar Bite', ...filteredReceipt } as any,
+            data: { businessName: 'Hot Take', ...filteredReceipt } as any,
           })
         }
       }

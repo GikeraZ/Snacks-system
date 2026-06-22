@@ -78,7 +78,7 @@ export default function ExpensesPage({ expenses, monthlyTotal, categoryTotals, r
 
   return (
     <>
-      <Head><title>Expenses - Danoscar Bite</title></Head>
+      <Head><title>Expenses - Hot Take</title></Head>
       <div>
         <div className="p-4 md:p-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">

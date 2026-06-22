@@ -1,5 +1,5 @@
 {
-  "name": "prince-snack-center",
+  "name": "hot-take",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -16,7 +16,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "Danoscar Bite - Order online, get free delivery!",
+  "description": "Hot Take - Order online, get free delivery!",
   "dependencies": {
     "@next-auth/prisma-adapter": "^1.0.7",
     "@prisma/client": "^5.22.0",

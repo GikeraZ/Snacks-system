@@ -43,7 +43,7 @@ export default function DeliveryOrders({ orders: initialOrders, role }: Delivery
   return (
     <>
       <Head>
-        <title>Deliveries - Danoscar Bite</title>
+        <title>Deliveries - Hot Take</title>
       </Head>
       <div>
         <div className="p-6">

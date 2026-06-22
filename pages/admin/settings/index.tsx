@@ -14,7 +14,7 @@ export default function SettingsPage({ role }: Props) {
   const [message, setMessage] = useState('')
 
   const [receipt, setReceipt] = useState({
-    businessName: 'Danoscar Bite',
+    businessName: 'Hot Take',
     address: '',
     phone: '',
     email: '',
@@ -107,7 +107,7 @@ export default function SettingsPage({ role }: Props) {
   if (loading) {
     return (
       <>
-        <Head><title>Settings - Danoscar Bite</title></Head>
+        <Head><title>Settings - Hot Take</title></Head>
         <div>
           <Loader2 className="h-8 w-8 animate-spin text-primary-600 dark:text-primary-400" />
         </div>
@@ -124,7 +124,7 @@ export default function SettingsPage({ role }: Props) {
 
   return (
     <>
-      <Head><title>Settings - Danoscar Bite</title></Head>
+      <Head><title>Settings - Hot Take</title></Head>
       <div>
         <div className="p-4 md:p-8 max-w-3xl">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">Settings</h1>

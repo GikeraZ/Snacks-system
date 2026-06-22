@@ -32,7 +32,7 @@ export default function CustomersPage({ customers }: Props) {
 
   return (
     <>
-      <Head><title>Customers - Danoscar Bite</title></Head>
+      <Head><title>Customers - Hot Take</title></Head>
       <div className="p-4 md:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>

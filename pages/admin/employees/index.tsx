@@ -106,7 +106,7 @@ export default function EmployeesPage({ role }: Props) {
 
   return (
     <>
-      <Head><title>Employees - Danoscar Bite</title></Head>
+      <Head><title>Employees - Hot Take</title></Head>
       <div>
         <div className="p-4 md:p-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">

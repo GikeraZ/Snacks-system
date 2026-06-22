@@ -48,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       if (isConfigured()) {
-        const result = await stkPush(phoneNumber, amount, `ORD-${orderId.slice(-8)}`, 'Danoscar Bite Payment')
+        const result = await stkPush(phoneNumber, amount, `ORD-${orderId.slice(-8)}`, 'Hot Take Payment')
 
         if (!result.success) {
           return res.status(400).json({ error: result.error || 'M-Pesa STK push failed' })
@@ -102,7 +102,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         data: { loyaltyPoints: { increment: pointsEarned } },
       })
 
-      const businessName = (await prisma.receiptSetting.findFirst())?.businessName || 'Danoscar Bite'
+      const businessName = (await prisma.receiptSetting.findFirst())?.businessName || 'Hot Take'
       const maskedPhone = phoneNumber.replace(/(\d{3})(\d{3})(\d{4})/, '$1****$3')
 
       return res.status(200).json({

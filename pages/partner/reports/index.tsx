@@ -37,7 +37,7 @@ export default function PartnerReports({ reports, role }: Props) {
 
   return (
     <>
-      <Head><title>Reports - Danoscar Bite</title></Head>
+      <Head><title>Reports - Hot Take</title></Head>
       <div className="p-4 md:p-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold dark:text-white">Reports</h1>

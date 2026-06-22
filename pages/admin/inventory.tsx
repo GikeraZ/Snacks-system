@@ -53,7 +53,7 @@ export default function InventoryPage({ ingredients, totalValue, lowStockCount, 
 
   return (
     <>
-      <Head><title>Inventory - Danoscar Bite</title></Head>
+      <Head><title>Inventory - Hot Take</title></Head>
       <div>
         <div className="p-4 md:p-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">

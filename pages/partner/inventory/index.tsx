@@ -31,7 +31,7 @@ interface Props {
 export default function PartnerInventory({ ingredients, products, totalValue, lowStockCount, role }: Props) {
   return (
     <>
-      <Head><title>Inventory - Danoscar Bite</title></Head>
+      <Head><title>Inventory - Hot Take</title></Head>
       <div className="p-4 md:p-6">
         <h1 className="text-2xl font-bold mb-6 dark:text-white">Inventory</h1>
 

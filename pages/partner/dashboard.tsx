@@ -36,7 +36,7 @@ export default function PartnerDashboard({
     <>
       
       <Head>
-        <title>Partner Dashboard - Danoscar Bite</title>
+        <title>Partner Dashboard - Hot Take</title>
       </Head>
 
       <div className="p-6">

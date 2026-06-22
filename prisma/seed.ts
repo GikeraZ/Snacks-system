@@ -11,7 +11,7 @@ async function main() {
     create: {
       name: 'Admin',
       phone: '0700000000',
-      email: 'admin@princesnackcenter.com',
+      email: 'admin@hottake.com',
       password: adminPassword,
       role: 'SUPER_ADMIN',
       referralCode: 'ADMIN001',

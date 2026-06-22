@@ -25,7 +25,7 @@ export default function CashierSummary({
 }: Props) {
   return (
     <>
-      <Head><title>Sales Summary - Danoscar Bite</title></Head>
+      <Head><title>Sales Summary - Hot Take</title></Head>
       <div className="p-4 md:p-6">
         <h1 className="text-2xl font-bold mb-6 dark:text-white">Sales Summary</h1>
 

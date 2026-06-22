@@ -23,7 +23,7 @@ export default function CashierDashboard({ role, todaySales, transactionCount, a
     <>
       
       <Head>
-        <title>Cashier Dashboard - Danoscar Bite</title>
+        <title>Cashier Dashboard - Hot Take</title>
       </Head>
 
       <div className="p-6">

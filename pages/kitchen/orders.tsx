@@ -39,7 +39,7 @@ export default function KitchenOrders({ orders: initialOrders, role }: KitchenOr
   return (
     <>
       <Head>
-        <title>Kitchen Orders - Danoscar Bite</title>
+        <title>Kitchen Orders - Hot Take</title>
       </Head>
       <div>
         <div className="p-6">

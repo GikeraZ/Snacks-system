@@ -139,7 +139,7 @@ export default function ReportsPage({ role }: Props) {
 
   return (
     <>
-      <Head><title>Reports - Danoscar Bite</title></Head>
+      <Head><title>Reports - Hot Take</title></Head>
       <div>
         <div className="p-4 md:p-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">

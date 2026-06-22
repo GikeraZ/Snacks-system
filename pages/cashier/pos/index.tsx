@@ -295,7 +295,7 @@ export default function POSPage({ products, categories, role }: Props) {
   if (processingMpesa) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-900">
-        <Head><title>M-Pesa - Danoscar Bite POS</title></Head>
+        <Head><title>M-Pesa - Hot Take POS</title></Head>
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8 max-w-md w-full text-center border border-gray-100 dark:border-gray-700">
           <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-green-500/20">
             <Smartphone className="h-10 w-10 text-white" />
@@ -353,7 +353,7 @@ export default function POSPage({ products, categories, role }: Props) {
   if (receipt) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-900">
-        <Head><title>Receipt - Danoscar Bite POS</title></Head>
+        <Head><title>Receipt - Hot Take POS</title></Head>
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-6 max-w-md w-full border border-gray-100 dark:border-gray-700 animate-scale-in">
           <div className="text-center mb-6">
             <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/20">
@@ -367,7 +367,7 @@ export default function POSPage({ products, categories, role }: Props) {
 
           <div className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-5 space-y-3">
             <div className="text-center border-b border-dashed border-gray-200 dark:border-gray-700 pb-3 mb-2">
-              <p className="text-base font-bold text-gray-900 dark:text-white">Danoscar Bite</p>
+              <p className="text-base font-bold text-gray-900 dark:text-white">Hot Take</p>
               <p className="text-[10px] text-gray-400">Point of Sale Receipt</p>
             </div>
 
@@ -465,7 +465,7 @@ export default function POSPage({ products, categories, role }: Props) {
 
   return (
     <>
-      <Head><title>Point of Sale - Danoscar Bite</title></Head>
+      <Head><title>Point of Sale - Hot Take</title></Head>
       <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">
         {/* Top bar */}
         <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between flex-shrink-0">

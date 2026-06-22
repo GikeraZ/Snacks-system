@@ -1,16 +1,34 @@
 {
-  "name": "Danoscar Bite",
-  "short_name": "DanoscarBite",
-  "description": "Danoscar Bite - Order online, get free delivery!",
+  "name": "Hot Take",
+  "short_name": "HotTake",
+  "description": "Hot Take - Order food, delivered fast!",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone"],
-  "background_color": "#ffffff",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "background_color": "#fef9ef",
   "theme_color": "#F97316",
   "orientation": "portrait-primary",
-  "categories": ["food", "business"],
-  "lang": "en-US",
+  "categories": ["food", "business", "lifestyle"],
+  "lang": "en-KE",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Browse Menu",
+      "short_name": "Menu",
+      "description": "Browse our full menu and order",
+      "url": "/customer",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Orders",
+      "short_name": "Orders",
+      "description": "View your order history",
+      "url": "/customer/orders",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
   "icons": [
     {
       "src": "/icons/icon-192.png",

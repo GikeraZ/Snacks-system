@@ -42,7 +42,7 @@ export default function Register() {
               <Coffee className="h-10 w-10 text-primary-600 dark:text-primary-400" />
             </div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Create Account</h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">Join Danoscar Bite</p>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">Join Hot Take</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">

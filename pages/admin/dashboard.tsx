@@ -140,7 +140,7 @@ export default function AdminDashboard({ stats, recentCustomers, role }: Dashboa
 
   return (
     <>
-      <Head><title>Dashboard - Danoscar Bite</title></Head>
+      <Head><title>Dashboard - Hot Take</title></Head>
       <div>
         <div className="p-4 md:p-8">
           <div className="mb-8">

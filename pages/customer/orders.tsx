@@ -133,7 +133,7 @@ export default function CustomerOrders() {
 
   return (
     <>
-      <Head><title>My Orders - Danoscar Bite</title></Head>
+      <Head><title>My Orders - Hot Take</title></Head>
 
       <div className="page-container min-h-screen pt-16 lg:pt-0">
         <header className="sticky top-16 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50">

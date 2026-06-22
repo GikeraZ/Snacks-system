@@ -57,7 +57,7 @@ export async function stkPush(
   phoneNumber: string,
   amount: number,
   accountReference: string,
-  transactionDesc = 'Danoscar Bite Payment'
+  transactionDesc = 'Hot Take Payment'
 ): Promise<{ success: boolean; checkoutRequestId?: string; merchantRequestId?: string; error?: string }> {
   if (!CONSUMER_KEY || !CONSUMER_SECRET || !PASSKEY || !SHORTCODE) {
     return { success: false, error: 'M-Pesa not configured. Set MPESA_* env vars.' }

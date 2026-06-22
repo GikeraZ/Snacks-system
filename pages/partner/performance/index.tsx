@@ -28,7 +28,7 @@ export default function PartnerPerformance({
 }: Props) {
   return (
     <>
-      <Head><title>Performance - Danoscar Bite</title></Head>
+      <Head><title>Performance - Hot Take</title></Head>
       <div className="p-4 md:p-6">
         <h1 className="text-2xl font-bold mb-6 dark:text-white">Performance</h1>
 

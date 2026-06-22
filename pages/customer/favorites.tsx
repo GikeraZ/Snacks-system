@@ -70,6 +70,15 @@ export default function CustomerFavorites() {
     })
   }
 
+  useEffect(() => {
+    if (Object.keys(cart).length > 0) {
+      try {
+        localStorage.setItem('cart', JSON.stringify(cart))
+        window.dispatchEvent(new Event('cart-updated'))
+      } catch {}
+    }
+  }, [cart])
+
   const checkout = () => {
     sessionStorage.setItem('cart', JSON.stringify(cart))
     router.push('/customer/checkout')
@@ -77,7 +86,7 @@ export default function CustomerFavorites() {
 
   return (
     <>
-      <Head><title>My Favorites - Danoscar Bite</title></Head>
+      <Head><title>My Favorites - Hot Take</title></Head>
 
       <div className="page-container min-h-screen pt-16 lg:pt-0">
         <header className="sticky top-16 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50">
@@ -173,7 +182,7 @@ export default function CustomerFavorites() {
                         {product.name}
                       </h3>
                       <p className="text-[11px] text-gray-400 dark:text-gray-500 line-clamp-1">
-                        {product.description || 'Danoscar Bite'}
+                        {product.description || 'Hot Take'}
                       </p>
                       <div className="flex items-center justify-between pt-1">
                         <p className="font-bold text-primary-500 text-sm">

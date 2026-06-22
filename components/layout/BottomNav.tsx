@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Home, ShoppingBag, Package, BarChart3, User, Heart,
   ShoppingCart, Menu, X, LogOut, Settings
@@ -51,7 +51,7 @@ const navItems: Record<string, NavItem[]> = {
   CUSTOMER: [
     { label: 'Menu', href: '/customer', icon: Home },
     { label: 'Orders', href: '/customer/orders', icon: ShoppingBag },
-    { label: 'Cart', href: '/customer/checkout', icon: ShoppingCart },
+    { label: 'Cart', href: '/customer', icon: ShoppingCart },
     { label: 'Favorites', href: '/customer/favorites', icon: Heart },
     { label: 'Profile', href: '/customer/profile', icon: User },
   ],
@@ -64,13 +64,45 @@ interface BottomNavProps {
 export default function BottomNav({ role }: BottomNavProps) {
   const router = useRouter()
   const [showDrawer, setShowDrawer] = useState(false)
+  const [cartCount, setCartCount] = useState(0)
   const items = navItems[role] || navItems.SUPER_ADMIN
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('cart')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+          setCartCount(Object.values(parsed).reduce((a: number, b: unknown) => a + (Number(b) || 0), 0))
+        }
+      }
+    } catch {}
+    const handler = () => {
+      try {
+        const saved = localStorage.getItem('cart')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+            setCartCount(Object.values(parsed).reduce((a: number, b: unknown) => a + (Number(b) || 0), 0))
+          } else { setCartCount(0) }
+        } else { setCartCount(0) }
+      } catch { setCartCount(0) }
+    }
+    window.addEventListener('storage', handler)
+    window.addEventListener('cart-updated', handler)
+    const interval = setInterval(handler, 2000)
+    return () => {
+      window.removeEventListener('storage', handler)
+      window.removeEventListener('cart-updated', handler)
+      clearInterval(interval)
+    }
+  }, [])
 
   const moreOptions: { label: string; href?: string; icon: any; onClick?: () => void; danger?: boolean }[] = [
     ...(role === 'CUSTOMER'
       ? [
           { label: 'Profile', href: '/customer/profile', icon: User },
-          { label: 'Settings', href: '#', icon: Settings },
+          { label: 'Account Settings', href: '/customer/profile?tab=settings', icon: Settings },
         ]
       : []),
     {
@@ -104,12 +136,17 @@ export default function BottomNav({ role }: BottomNavProps) {
                   {isActive && (
                     <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-gradient-to-r from-primary-400 to-primary-600 rounded-full shadow-sm shadow-primary-500/30" />
                   )}
-                  <div className={`p-1.5 rounded-xl transition-all duration-200 ${
+                  <div className={`relative p-1.5 rounded-xl transition-all duration-200 ${
                     isActive
                       ? 'bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/30 dark:to-primary-800/20 scale-110'
                       : ''
                   }`}>
                     <Icon size={20} />
+                    {item.label === 'Cart' && role === 'CUSTOMER' && cartCount > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 bg-gradient-to-br from-primary-500 to-primary-600 text-white text-[8px] font-bold rounded-full flex items-center justify-center shadow-lg shadow-primary-500/30">
+                        {cartCount}
+                      </span>
+                    )}
                   </div>
                   <span className={`text-[10px] font-semibold mt-0.5 tracking-wide transition-colors ${
                     isActive ? 'text-primary-500' : 'text-gray-400 dark:text-gray-500'

@@ -75,8 +75,26 @@ export default function CustomerMenu({ role, categories, activeOrder, loyaltyPoi
       const stored = localStorage.getItem('favorites')
       if (stored) setFavorites(JSON.parse(stored))
     } catch {}
+    try {
+      const savedCart = localStorage.getItem('cart')
+      if (savedCart) {
+        const parsed = JSON.parse(savedCart)
+        if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+          setCart(parsed)
+        }
+      }
+    } catch {}
     setHydrated(true)
   }, [])
+
+  useEffect(() => {
+    if (hydrated) {
+      try {
+        localStorage.setItem('cart', JSON.stringify(cart))
+        window.dispatchEvent(new Event('cart-updated'))
+      } catch {}
+    }
+  }, [cart, hydrated])
   const [searchFocused, setSearchFocused] = useState(false)
   const router = useRouter()
   const searchRef = useRef<HTMLInputElement>(null)
@@ -162,7 +180,7 @@ export default function CustomerMenu({ role, categories, activeOrder, loyaltyPoi
 
   return (
     <>
-      <Head><title>Danoscar Bite — Campus Delivery</title></Head>
+      <Head><title>Hot Take — Campus Delivery</title></Head>
       <div className="min-h-screen page-container pt-16 lg:pt-0">
         {/* Header */}
         <header className="sticky top-16 z-30 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50">
@@ -173,7 +191,7 @@ export default function CustomerMenu({ role, categories, activeOrder, loyaltyPoi
                   <Coffee size={22} className="text-white" />
                 </div>
                 <div>
-                  <h1 className="text-base font-bold text-gray-900 dark:text-white font-heading leading-tight">Danoscar Bite</h1>
+                  <h1 className="text-base font-bold text-gray-900 dark:text-white font-heading leading-tight">Hot Take</h1>
                   <p className="text-[11px] text-gray-400 dark:text-gray-500 font-medium flex items-center gap-1">
                     <Bike size={11} className="text-primary-500" />
                     Delivered in under 15 min
